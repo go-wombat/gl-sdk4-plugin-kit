@@ -76,9 +76,25 @@ handling automatically. Use `$axios` only when you need full control.
 ## Authentication
 
 - On login, the backend returns a session ID (SID).
-- The SID is stored in the Vuex store (`this.$store.state.sid`).
+- The SID is stored as a cookie (`Admin-Token`) and in the Vuex store.
 - `$rpcRequest` replaces the `"sid"` placeholder with the real token automatically.
 - Sessions expire after inactivity; the admin panel handles re-authentication.
+
+### Login Algorithm (for CLI tools)
+
+```bash
+# 1. Get challenge
+curl -s http://ROUTER/rpc -d '{"jsonrpc":"2.0","id":1,"method":"challenge","params":{"username":"root"}}'
+# => { result: { alg: 1, salt: "XXXX", nonce: "YYYY" } }
+
+# 2. Compute hash: sha256(username + ":" + crypt(password, "$alg$salt$") + ":" + nonce)
+CRYPTED=$(openssl passwd -1 -salt "$SALT" "$PASSWORD")
+HASH=$(printf '%s' "root:${CRYPTED}:${NONCE}" | shasum -a 256 | cut -d' ' -f1)
+
+# 3. Login
+curl -s http://ROUTER/rpc -d '{"jsonrpc":"2.0","id":2,"method":"login","params":{"username":"root","hash":"'$HASH'"}}'
+# => { result: { sid: "SESSION_TOKEN" } }
+```
 
 ---
 
@@ -211,30 +227,30 @@ computed: {
 
 ## Known API Namespaces
 
-The following RPC methods have been **confirmed working** through reverse
-engineering and testing on GL-MT3000 firmware 4.8.1:
+The following RPC methods have been **confirmed working** by live testing
+on GL-MT3000 firmware 4.8.1:
 
 | Namespace | Confirmed Methods |
 |-----------|-------------------|
-| `system` | `board`, `get_load`, `get_usb3_disable`, `set_usb3_disable` |
-| `wifi` | `get_config` |
-| `led` | `get_config`, `set_config` |
-| `fan` | `get_status`, `get_config`, `set_config` |
-| `timer` | `get_led` |
-| `repeater` | `get_channel_prompt`, `set_channel_prompt` |
-| `ui` | `get_menu_list`, `set_lang` |
+| `system` | `get_status`, `get_info` |
+| `clients` | `get_status` |
+| `wifi` | `get_status`, `get_config` |
+| `led` | `get_config` |
+| `fan` | `get_status`, `get_config` |
+| `dns` | `get_config`, `get_info` |
+| `ddns` | `get_status`, `get_config` |
+| `tailscale` | `get_status`, `get_config` |
+| `adguardhome` | `get_config` |
+| `repeater` | `get_status`, `get_config` |
+| `tor` | `get_status`, `get_config` |
+| `upgrade` | `get_config` |
+| `cloud` | `get_config` |
 
-The following are **likely available** but not yet confirmed:
+**Not available via RPC** (use ubus via SSH or Vuex store instead):
 
-| Namespace | Expected Methods |
-|-----------|-----------------|
-| `network` | `status`, `get_config` |
-| `wireguard` | `status`, `get_config`, `start`, `stop` |
-| `openvpn` | `status`, `get_config`, `start`, `stop` |
-| `clients` | `list` |
-| `dns` | `get_config`, `set_config` |
-| `tailscale` | `status`, `get_config` |
-| `adguardhome` | `status`, `get_config` |
+- `system.board`, `system.info` — use `system.get_status` and `system.get_info`
+- `network.status` — network data is in `system.get_status` response
+- `wireguard`, `openvpn` — service status is in `system.get_status`
 
 > Available namespaces vary by firmware version and installed packages.
 > Use `glplugin extract` to discover methods from your firmware version.
@@ -242,15 +258,34 @@ The following are **likely available** but not yet confirmed:
 ### Commonly Used Calls
 
 ```js
-// Get hardware info (CONFIRMED WORKING)
-this.$rpcRequest('call', ['sid', 'system', 'board', {}])
-// => { hostname, model, board_name, kernel, system, release: { version, revision } }
+// Get system status — network, wifi, services (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'system', 'get_status', {}])
+// => { network: [{interface, up, online}], wifi: [{ssid, band, channel, encryption, passwd, guest}],
+//      system: {uptime, lan_ip, cpu, flash_total, flash_free, ...}, service: [{name, status}] }
 
-// Get system load (CONFIRMED WORKING)
-this.$rpcRequest('call', ['sid', 'system', 'get_load', {}])
+// Get device info — hardware, firmware, board (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'system', 'get_info', {}])
+// => { board_info: {hostname, model, architecture, kernel_version, openwrt_version},
+//      firmware_version, mac, sn, cpu_num, country_code,
+//      hardware_feature: {fan, mcu, bluetooth, usb3, ...},
+//      software_feature: {vpn, tor, nas, adguard, ipv6, ...} }
 
-// Get uptime (USE VUEX STORE, NOT RPC)
-const uptime = this.$store.state.systemStatus.system.uptime;
+// Get connected client counts (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'clients', 'get_status', {}])
+// => { wireless_total: 5, cable_total: 0 }
+
+// Get Wi-Fi radio status (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'wifi', 'get_status', {}])
+// => { res: [{state, name, channel}] }
+
+// Get Wi-Fi config (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'wifi', 'get_config', {}])
+
+// Get DNS config (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'dns', 'get_config', {}])
+
+// Get Tailscale status (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'tailscale', 'get_status', {}])
 ```
 
 ---

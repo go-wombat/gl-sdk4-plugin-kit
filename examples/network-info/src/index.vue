@@ -3,10 +3,6 @@
     <gl-title title="Network Info" />
 
     <gl-card>
-      <gl-tips state="info">
-        Device and network information from the Vuex store and RPC API.
-      </gl-tips>
-
       <div class="section">
         <h3 class="section-heading">Device</h3>
         <gl-table :data="deviceRows">
@@ -26,12 +22,26 @@
       </div>
     </gl-card>
 
+    <gl-card v-if="networkRows.length" style="margin-top: 20px;">
+      <div class="section">
+        <h3 class="section-heading">Network Interfaces</h3>
+        <gl-table :data="networkRows">
+          <gl-table-column prop="iface" label="Interface" />
+          <gl-table-column prop="status" label="Status" />
+          <gl-table-column prop="online" label="Online" />
+        </gl-table>
+      </div>
+    </gl-card>
+
     <gl-card v-if="wifiRows.length" style="margin-top: 20px;">
       <div class="section">
         <h3 class="section-heading">Wi-Fi</h3>
         <gl-table :data="wifiRows">
-          <gl-table-column prop="label" label="Property" />
-          <gl-table-column prop="value" label="Value" />
+          <gl-table-column prop="ssid" label="SSID" />
+          <gl-table-column prop="band" label="Band" />
+          <gl-table-column prop="channel" label="Channel" />
+          <gl-table-column prop="encryption" label="Security" />
+          <gl-table-column prop="type" label="Type" />
         </gl-table>
       </div>
     </gl-card>
@@ -45,10 +55,6 @@
         </gl-table>
       </div>
     </gl-card>
-
-    <div v-if="error" class="error-banner">
-      <gl-tips state="error">{{ error }}</gl-tips>
-    </div>
   </div>
 </template>
 
@@ -57,82 +63,93 @@ export default {
   name: 'NetworkInfo',
   data() {
     return {
-      board: {},
-      error: '',
+      sysInfo: {},
+      sysStatus: {},
     };
   },
   computed: {
-    ss() {
-      var st = this.$store && this.$store.state ? this.$store.state : {};
-      return st.systemStatus || {};
+    boardInfo() {
+      return this.sysInfo.board_info || {};
     },
-    si() {
-      var st = this.$store && this.$store.state ? this.$store.state : {};
-      return st.systemInfo || {};
+    sys() {
+      return this.sysStatus.system || {};
     },
     deviceRows() {
-      var b = this.si.board_info || {};
+      var b = this.boardInfo;
       var rows = [
-        { label: 'Model', value: b.model || this.board.model || '--' },
-        { label: 'Hostname', value: b.hostname || this.board.hostname || '--' },
-        { label: 'Architecture', value: b.architecture || this.board.system || '--' },
-        { label: 'Kernel', value: b.kernel_version || this.board.kernel || '--' },
+        { label: 'Model', value: b.model || '--' },
+        { label: 'Hostname', value: b.hostname || '--' },
+        { label: 'Architecture', value: b.architecture || '--' },
+        { label: 'Kernel', value: b.kernel_version || '--' },
         { label: 'OpenWrt', value: b.openwrt_version || '--' },
-        { label: 'Firmware', value: this.si.firmware_version || '--' },
+        { label: 'Firmware', value: this.sysInfo.firmware_version || '--' },
       ];
-      if (this.si.mac) rows.push({ label: 'MAC', value: this.si.mac });
+      if (this.sysInfo.mac) rows.push({ label: 'MAC', value: this.sysInfo.mac });
+      if (this.sysInfo.cpu_num) rows.push({ label: 'CPU Cores', value: String(this.sysInfo.cpu_num) });
       return rows;
     },
     systemRows() {
-      var sys = this.ss.system || {};
+      var s = this.sys;
       var rows = [
-        { label: 'Uptime', value: this.formatUptime(sys.uptime) },
-        { label: 'LAN IP', value: sys.lan_ip || '--' },
-        { label: 'Mode', value: this.modeName(sys.mode) },
+        { label: 'Uptime', value: this.formatUptime(s.uptime) },
+        { label: 'LAN IP', value: s.lan_ip || '--' },
+        { label: 'Mode', value: this.modeName(s.mode) },
       ];
-      if (sys.cpu && sys.cpu.temperature) {
-        rows.push({ label: 'CPU Temp', value: sys.cpu.temperature + ' C' });
+      if (s.cpu && s.cpu.temperature) {
+        rows.push({ label: 'CPU Temp', value: s.cpu.temperature + ' C' });
       }
-      if (sys.flash_total) {
-        rows.push({ label: 'Flash', value: sys.flash_free + ' / ' + sys.flash_total + ' MB free' });
+      if (s.flash_total) {
+        rows.push({ label: 'Flash Free', value: s.flash_free + ' / ' + s.flash_total + ' MB' });
       }
-      if (sys.guest_ip) {
-        rows.push({ label: 'Guest IP', value: sys.guest_ip });
+      if (s.guest_ip) {
+        rows.push({ label: 'Guest IP', value: s.guest_ip });
       }
       return rows;
+    },
+    networkRows() {
+      var net = this.sysStatus.network || [];
+      return net.map(function (n) {
+        return {
+          iface: n.interface || '--',
+          status: n.up ? 'Up' : 'Down',
+          online: n.online ? 'Yes' : 'No',
+        };
+      });
     },
     wifiRows() {
-      var wifi = this.ss.wifi || [];
-      var rows = [];
-      wifi.forEach(function (w, i) {
-        rows.push({ label: 'SSID' + (i > 0 ? ' ' + (i + 1) : ''), value: w.ssid || '--' });
-        if (w.channel) rows.push({ label: 'Channel' + (i > 0 ? ' ' + (i + 1) : ''), value: String(w.channel) });
+      var wifi = this.sysStatus.wifi || [];
+      return wifi.map(function (w) {
+        return {
+          ssid: w.ssid || '--',
+          band: w.band || '--',
+          channel: w.channel ? String(w.channel) : '--',
+          encryption: w.encryption || '--',
+          type: w.guest ? 'Guest' : 'Main',
+        };
       });
-      return rows;
     },
     serviceRows() {
-      var services = this.ss.service || [];
-      return services.map(function (s) {
+      var svc = this.sysStatus.service || [];
+      return svc.map(function (s) {
         return {
-          name: s.name,
+          name: s.name || '--',
           status: s.status ? 'Running' : 'Stopped',
         };
       });
     },
   },
   created() {
-    this.fetchBoard();
+    this.fetchData();
   },
   methods: {
-    fetchBoard() {
+    fetchData() {
       var self = this;
-      this.$rpcRequest('call', ['sid', 'system', 'board', {}])
-        .then(function (res) {
-          self.board = res || {};
-        })
-        .catch(function () {
-          self.error = 'Failed to fetch board info.';
-        });
+      this.$rpcRequest('call', ['sid', 'system', 'get_info', {}])
+        .then(function (res) { self.sysInfo = res || {}; })
+        .catch(function () {});
+      this.$rpcRequest('call', ['sid', 'system', 'get_status', {}])
+        .then(function (res) { self.sysStatus = res || {}; })
+        .catch(function () {});
     },
     formatUptime(s) {
       if (!s && s !== 0) return '--';
@@ -147,7 +164,7 @@ export default {
     },
     modeName(mode) {
       var modes = { 0: 'Router', 1: 'WDS', 2: 'Relay', 3: 'Mesh', 4: 'AP', 6: 'Passthrough' };
-      return modes[mode] || '--';
+      return modes[mode] !== undefined ? modes[mode] : '--';
     },
   },
 };
@@ -157,15 +174,10 @@ export default {
 .section {
   margin-bottom: 8px;
 }
-
 .section-heading {
   color: var(--title-color);
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 12px;
-}
-
-.error-banner {
-  margin-top: 20px;
 }
 </style>

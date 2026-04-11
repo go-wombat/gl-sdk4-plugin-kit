@@ -10,23 +10,27 @@
         <h3 class="section-heading">Device Information</h3>
         <div class="info-row">
           <span class="info-label">Model</span>
-          <span class="info-value">{{ board.model || '--' }}</span>
+          <span class="info-value">{{ boardInfo.model || '--' }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Hostname</span>
-          <span class="info-value">{{ board.hostname || '--' }}</span>
+          <span class="info-value">{{ boardInfo.hostname || '--' }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Kernel</span>
-          <span class="info-value">{{ board.kernel || '--' }}</span>
+          <span class="info-value">{{ boardInfo.kernel_version || '--' }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Firmware</span>
-          <span class="info-value">{{ firmwareVersion }}</span>
+          <span class="info-value">{{ firmware }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Uptime</span>
           <span class="info-value">{{ formattedUptime }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Clients</span>
+          <span class="info-value">{{ clients }}</span>
         </div>
       </div>
 
@@ -40,22 +44,32 @@ export default {
   name: 'HelloWorld',
   data() {
     return {
-      board: {},
+      sysInfo: {},
+      sysStatus: {},
+      clientStatus: {},
       error: '',
     };
   },
   computed: {
-    firmwareVersion() {
-      return this.board.release ? this.board.release.version : '--';
+    boardInfo() {
+      return this.sysInfo.board_info || {};
+    },
+    firmware() {
+      return this.sysInfo.firmware_version || '--';
     },
     formattedUptime() {
-      var status = this.$store && this.$store.state ? this.$store.state.systemStatus : null;
-      if (!status || !status.system || !status.system.uptime) return '--';
-      var s = status.system.uptime;
+      var sys = (this.sysStatus || {}).system || {};
+      if (!sys.uptime) return '--';
+      var s = sys.uptime;
       var d = Math.floor(s / 86400);
       var h = Math.floor((s % 86400) / 3600);
       var m = Math.floor((s % 3600) / 60);
       return d + 'd ' + h + 'h ' + m + 'm';
+    },
+    clients() {
+      var c = this.clientStatus;
+      if (!c.wireless_total && c.wireless_total !== 0) return '--';
+      return c.wireless_total + ' wireless, ' + (c.cable_total || 0) + ' wired';
     },
   },
   created() {
@@ -64,13 +78,15 @@ export default {
   methods: {
     fetchData() {
       var self = this;
-      this.$rpcRequest('call', ['sid', 'system', 'board', {}])
-        .then(function (res) {
-          self.board = res || {};
-        })
-        .catch(function () {
-          self.error = 'Failed to fetch device info.';
-        });
+      this.$rpcRequest('call', ['sid', 'system', 'get_info', {}])
+        .then(function (res) { self.sysInfo = res || {}; })
+        .catch(function () {});
+      this.$rpcRequest('call', ['sid', 'system', 'get_status', {}])
+        .then(function (res) { self.sysStatus = res || {}; })
+        .catch(function () {});
+      this.$rpcRequest('call', ['sid', 'clients', 'get_status', {}])
+        .then(function (res) { self.clientStatus = res || {}; })
+        .catch(function () {});
     },
   },
 };
@@ -80,14 +96,12 @@ export default {
 .info-section {
   margin-top: 20px;
 }
-
 .section-heading {
   color: var(--title-color);
   font-size: 16px;
   font-weight: 600;
   margin-bottom: 12px;
 }
-
 .info-row {
   display: flex;
   justify-content: space-between;
@@ -95,18 +109,15 @@ export default {
   padding: 10px 0;
   border-bottom: 1px solid var(--table-border);
 }
-
 .info-label {
   color: var(--label-color);
   font-size: 14px;
 }
-
 .info-value {
   color: var(--text-color);
   font-size: 14px;
   font-weight: 500;
 }
-
 .error-text {
   text-align: center;
   padding: 20px;

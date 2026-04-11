@@ -2,10 +2,6 @@
   <div class="vpnstatus-wrapper">
     <gl-title :title="'VPN Status'" />
 
-    <gl-tips v-if="error" state="error">
-      {{ error }}
-    </gl-tips>
-
     <gl-card>
       <div class="status-header">
         <span class="status-label">WireGuard</span>
@@ -31,6 +27,18 @@
           {{ tailscaleRunning ? 'Running' : 'Stopped' }}
         </div>
       </div>
+      <div v-if="tailscaleIp" class="status-detail">
+        IP: {{ tailscaleIp }}
+      </div>
+    </gl-card>
+
+    <gl-card style="margin-top: 16px">
+      <div class="status-header">
+        <span class="status-label">Tor</span>
+        <div class="status-indicator" :class="{ active: torRunning }">
+          {{ torRunning ? 'Running' : 'Stopped' }}
+        </div>
+      </div>
     </gl-card>
 
     <gl-card v-if="allServices.length" style="margin-top: 16px">
@@ -41,67 +49,79 @@
       </gl-table>
     </gl-card>
 
-    <gl-card v-if="networkInterfaces.length" style="margin-top: 16px">
+    <gl-card v-if="interfaces.length" style="margin-top: 16px">
       <h3 class="section-heading">Network Interfaces</h3>
-      <gl-table :data="networkInterfaces">
-        <gl-table-column prop="name" label="Interface" />
-        <gl-table-column prop="proto" label="Protocol" />
-        <gl-table-column prop="ip" label="IP" />
+      <gl-table :data="interfaces">
+        <gl-table-column prop="iface" label="Interface" />
         <gl-table-column prop="status" label="Status" />
+        <gl-table-column prop="online" label="Online" />
       </gl-table>
     </gl-card>
-
-    <gl-tips state="info" style="margin-top: 16px">
-      Data from Vuex store. No RPC calls needed.
-    </gl-tips>
   </div>
 </template>
 
 <script>
 export default {
   name: 'vpnstatus',
+  data() {
+    return {
+      sysStatus: {},
+      tailscaleStatus: {},
+      torStatus: {},
+    };
+  },
   computed: {
-    ss() {
-      var st = this.$store && this.$store.state ? this.$store.state : {};
-      return st.systemStatus || {};
-    },
     services() {
-      return this.ss.service || [];
+      return (this.sysStatus.service || []);
     },
     wgRunning() {
-      return this.serviceStatus('wireguard');
+      return this.isServiceRunning('wireguard');
     },
     ovpnRunning() {
-      return this.serviceStatus('openvpn');
+      return this.isServiceRunning('openvpn');
     },
     tailscaleRunning() {
-      return this.serviceStatus('tailscale');
+      return this.tailscaleStatus.enabled || false;
+    },
+    tailscaleIp() {
+      return this.tailscaleStatus.ip || '';
+    },
+    torRunning() {
+      return this.isServiceRunning('tor');
     },
     allServices() {
       return this.services.map(function (s) {
-        return {
-          name: s.name,
-          status: s.status ? 'Running' : 'Stopped',
-        };
+        return { name: s.name, status: s.status ? 'Running' : 'Stopped' };
       });
     },
-    networkInterfaces() {
-      var net = this.ss.network || [];
+    interfaces() {
+      var net = this.sysStatus.network || [];
       return net.map(function (n) {
         return {
-          name: n.interface || '--',
-          proto: n.proto || '--',
-          ip: n.ipaddr || '--',
+          iface: n.interface || '--',
           status: n.up ? 'Up' : 'Down',
+          online: n.online ? 'Yes' : 'No',
         };
       });
     },
-    error() {
-      return null;
-    },
+  },
+  created() {
+    this.fetchData();
   },
   methods: {
-    serviceStatus(name) {
+    fetchData() {
+      var self = this;
+      this.$rpcRequest('call', ['sid', 'system', 'get_status', {}])
+        .then(function (res) { self.sysStatus = res || {}; })
+        .catch(function () {});
+      this.$rpcRequest('call', ['sid', 'tailscale', 'get_status', {}])
+        .then(function (res) { self.tailscaleStatus = res || {}; })
+        .catch(function () {});
+      this.$rpcRequest('call', ['sid', 'tor', 'get_status', {}])
+        .then(function (res) { self.torStatus = res || {}; })
+        .catch(function () {});
+    },
+    isServiceRunning(name) {
       var svc = this.services.find(function (s) { return s.name === name; });
       return svc ? !!svc.status : false;
     },
@@ -130,6 +150,11 @@ export default {
 }
 .status-indicator.active {
   color: var(--success-color);
+}
+.status-detail {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--hint-color);
 }
 .section-heading {
   color: var(--title-color);
