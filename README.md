@@ -34,12 +34,27 @@ glplugin deploy root@192.168.8.1
 
 Open your router's admin panel and refresh — your plugin appears in the sidebar.
 
+### Create an installable .ipk package
+
+```bash
+glplugin package
+# Output: dist/gl-sdk4-ui-my-plugin_1.0.0_all.ipk
+
+# Install on router (survives reboots):
+scp -O dist/*.ipk root@192.168.8.1:/tmp/
+ssh root@192.168.8.1 "opkg install /tmp/gl-sdk4-ui-my-plugin_1.0.0_all.ipk"
+
+# Uninstall:
+ssh root@192.168.8.1 "opkg remove gl-sdk4-ui-my-plugin"
+```
+
 ## CLI Commands
 
 | Command | Description |
 |---------|-------------|
 | `glplugin init <name>` | Scaffold a new plugin project |
 | `glplugin build` | Build plugin (webpack + gzip) |
+| `glplugin package` | Create `.ipk` package (installable via opkg, survives reboots) |
 | `glplugin deploy <host>` | Deploy to router via SCP |
 | `glplugin extract <host>` | Extract component info from any firmware |
 | `glplugin help` | Show help |
