@@ -56,7 +56,10 @@ ssh root@192.168.8.1 "opkg remove gl-sdk4-ui-my-plugin"
 | `glplugin build` | Build plugin (webpack + gzip) |
 | `glplugin package` | Create `.ipk` package (installable via opkg, survives reboots) |
 | `glplugin deploy <host>` | Deploy to router via SCP |
-| `glplugin extract <host>` | Extract component info from any firmware |
+| `glplugin test <host>` | Test plugin and API connectivity against live router |
+| `glplugin extract <host>` | Extract components via SSH |
+| `glplugin extract <ip> --rpc` | Discover API endpoints via RPC (no SSH needed) |
+| `glplugin extract <host> --full` | Both SSH + RPC extraction |
 | `glplugin help` | Show help |
 
 ## Plugin Structure
@@ -112,12 +115,35 @@ p { color: var(--text-color); }
 </style>
 ```
 
+## Safe RPC Mixin
+
+GL.iNet shows a global error popup when an RPC call fails. Include the safe RPC mixin
+to prevent this:
+
+```js
+// Copy safeRpcMixin into your component methods (no import needed in the bundle):
+methods: {
+  safeRpc(module, func, params) {
+    return this.$rpcRequest('call', ['sid', module, func, params || {}])
+      .then(function (res) { return res; })
+      .catch(function () { return null; });
+  }
+}
+
+// Then use safeRpc instead of $rpcRequest:
+const info = await this.safeRpc('system', 'get_info');
+if (info) { /* success */ }
+```
+
+See [lib/safe-rpc-mixin.js](lib/safe-rpc-mixin.js) for the full mixin with `safeRpcOr` and `safeRpcBatch`.
+
 ## Documentation
 
 - [Components Reference](docs/components.md) — All 49 built-in `gl-*` Vue components
 - [API Reference](docs/api.md) — RPC calls and backend communication
 - [Menu Format](docs/menu.md) — How to define menu entries
 - [Theme Variables](docs/theme.md) — CSS variables for native look and feel
+- [Type Definitions](lib/types.js) — JSDoc types for all API responses (IDE autocomplete)
 
 ## Examples
 
