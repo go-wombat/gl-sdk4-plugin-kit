@@ -109,8 +109,8 @@ export default {
       this.error = '';
       try {
         const [board, info] = await Promise.all([
-          this.$rpc.call('system', 'board', {}),
-          this.$rpc.call('system', 'info', {})
+          this.$rpcRequest('call', ['sid', 'system', 'board', {}]),
+          this.$rpcRequest('call', ['sid', 'system', 'info', {}])
         ]);
         this.board = board;
         this.info = info;

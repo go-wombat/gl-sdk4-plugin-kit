@@ -98,7 +98,7 @@ export default {
   },
   methods: {
     refresh() {
-      this.$rpc.call('system', 'board', {}).then(res => {
+      this.$rpcRequest('call', ['sid', 'system', 'board', {}]).then(res => {
         this.info = res.model;
       });
     },

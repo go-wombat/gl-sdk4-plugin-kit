@@ -81,7 +81,7 @@ export default {
       this.loading = true;
       this.error = null;
       try {
-        const wgStatus = await this.$rpc.call('wireguard', 'status', {});
+        const wgStatus = await this.$rpcRequest('call', ['sid', 'wireguard', 'status', {}]);
         this.wgEnabled = wgStatus.enabled || false;
         this.wgConnected = wgStatus.connected || false;
 
@@ -105,7 +105,7 @@ export default {
       }
 
       try {
-        const ovpnStatus = await this.$rpc.call('openvpn', 'status', {});
+        const ovpnStatus = await this.$rpcRequest('call', ['sid', 'openvpn', 'status', {}]);
         this.ovpnEnabled = ovpnStatus.enabled || false;
         this.ovpnConnected = ovpnStatus.connected || false;
       } catch (e) {
@@ -119,7 +119,7 @@ export default {
     async toggleWg(val) {
       this.toggling = true;
       try {
-        await this.$rpc.call('wireguard', val ? 'start' : 'stop', {});
+        await this.$rpcRequest('call', ['sid', 'wireguard', val ? 'start' : 'stop', {}]);
         await this.refresh();
       } catch (e) {
         this.error = 'Failed to toggle WireGuard.';
@@ -129,7 +129,7 @@ export default {
     async toggleOvpn(val) {
       this.toggling = true;
       try {
-        await this.$rpc.call('openvpn', val ? 'start' : 'stop', {});
+        await this.$rpcRequest('call', ['sid', 'openvpn', val ? 'start' : 'stop', {}]);
         await this.refresh();
       } catch (e) {
         this.error = 'Failed to toggle OpenVPN.';
