@@ -82,46 +82,102 @@ handling automatically. Use `$axios` only when you need full control.
 
 ---
 
+## Important: Not All ubus Methods Are Proxied
+
+GL.iNet's RPC layer does **not** expose all OpenWrt ubus methods. It only proxies
+methods that GL.iNet has explicitly whitelisted. For example:
+
+- `system.board` -- works (proxied)
+- `system.get_load` -- works (proxied)
+- `system.info` -- **does NOT work** (not proxied, triggers global error popup)
+
+If you call a non-proxied method, the admin panel shows a global error:
+"Unknown error occurred. Please check the network environment or reboot the device."
+
+Always wrap RPC calls in try/catch to prevent error popups from crashing your plugin.
+
+---
+
+## Vuex Store (Global State)
+
+The admin panel pre-fetches system data and stores it in Vuex. You can access it
+directly without making RPC calls:
+
+```js
+// System status (uptime, load, etc.)
+this.$store.state.systemStatus
+// => { system: { uptime: 54525, ... }, memory: { total, free, ... } }
+
+// System info (board info)
+this.$store.state.systemInfo
+// => { board_info: { hostname, model, ... } }
+
+// Session ID
+this.$store.state.sid
+```
+
+### Getting Uptime (the correct way)
+
+Do NOT call `system.info` via RPC. Use the Vuex store instead:
+
+```js
+computed: {
+  uptime() {
+    const status = this.$store.state.systemStatus;
+    if (!status || !status.system) return '--';
+    const s = status.system.uptime;
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return d + 'd ' + h + 'h ' + m + 'm';
+  }
+}
+```
+
+---
+
 ## Known API Namespaces
 
-| Namespace | Description | Example Methods |
-|-----------|-------------|-----------------|
-| `system` | System info and management | `board`, `info`, `reboot`, `get_load`, `get_usb3_disable`, `set_usb3_disable` |
-| `network` | Network interfaces | `status`, `get_config` |
-| `wifi` | Wireless settings | `status`, `get_config`, `set_config` |
-| `wireguard` | WireGuard VPN | `status`, `get_config`, `start`, `stop` |
-| `openvpn` | OpenVPN | `status`, `get_config`, `start`, `stop` |
-| `firewall` | Firewall rules | `get_rules`, `set_rules` |
-| `clients` | Connected devices | `list` |
-| `dns` | DNS settings | `get_config`, `set_config` |
-| `ddns` | Dynamic DNS | `status`, `get_config` |
-| `tailscale` | Tailscale VPN | `status`, `get_config` |
-| `adguardhome` | AdGuard Home | `status`, `get_config` |
-| `led` | LED control | `get_config`, `set_config` |
-| `fan` | Fan control | `get_status`, `get_config`, `set_config` |
-| `timer` | Scheduled tasks | `get_led` |
+The following RPC methods have been **confirmed working** through reverse
+engineering and testing on GL-MT3000 firmware 4.8.1:
+
+| Namespace | Confirmed Methods |
+|-----------|-------------------|
+| `system` | `board`, `get_load`, `get_usb3_disable`, `set_usb3_disable` |
+| `wifi` | `get_config` |
+| `led` | `get_config`, `set_config` |
+| `fan` | `get_status`, `get_config`, `set_config` |
+| `timer` | `get_led` |
+| `repeater` | `get_channel_prompt`, `set_channel_prompt` |
+| `ui` | `get_menu_list`, `set_lang` |
+
+The following are **likely available** but not yet confirmed:
+
+| Namespace | Expected Methods |
+|-----------|-----------------|
+| `network` | `status`, `get_config` |
+| `wireguard` | `status`, `get_config`, `start`, `stop` |
+| `openvpn` | `status`, `get_config`, `start`, `stop` |
+| `clients` | `list` |
+| `dns` | `get_config`, `set_config` |
+| `tailscale` | `status`, `get_config` |
+| `adguardhome` | `status`, `get_config` |
 
 > Available namespaces vary by firmware version and installed packages.
+> Use `glplugin extract` to discover methods from your firmware version.
 
 ### Commonly Used Calls
 
 ```js
-// Get hardware info
+// Get hardware info (CONFIRMED WORKING)
 this.$rpcRequest('call', ['sid', 'system', 'board', {}])
 // => { hostname, model, board_name, kernel, system, release: { version, revision } }
 
-// Get runtime info
-this.$rpcRequest('call', ['sid', 'system', 'info', {}])
-// => { uptime, localtime, memory: { total, free, buffered }, load: [1m, 5m, 15m] }
+// Get system load (CONFIRMED WORKING)
+this.$rpcRequest('call', ['sid', 'system', 'get_load', {}])
 
-// Get connected clients
-this.$rpcRequest('call', ['sid', 'clients', 'list', {}])
-
-// Get Wi-Fi status
-this.$rpcRequest('call', ['sid', 'wifi', 'status', {}])
-
-// Get WireGuard status
-this.$rpcRequest('call', ['sid', 'wireguard', 'status', {}])
+// Get uptime (USE VUEX STORE, NOT RPC)
+const uptime = this.$store.state.systemStatus.system.uptime;
 ```
 
 ---
