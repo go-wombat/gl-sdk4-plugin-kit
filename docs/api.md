@@ -100,25 +100,90 @@ Always wrap RPC calls in try/catch to prevent error popups from crashing your pl
 
 ## Vuex Store (Global State)
 
-The admin panel pre-fetches system data and stores it in Vuex. You can access it
-directly without making RPC calls:
+The admin panel pre-fetches system data into Vuex on page load. Access it directly
+without making RPC calls — this is how GL.iNet's own pages get system data.
+
+### this.$store.state.systemStatus
 
 ```js
-// System status (uptime, load, etc.)
-this.$store.state.systemStatus
-// => { system: { uptime: 54525, ... }, memory: { total, free, ... } }
+{
+  system: {
+    mode: 0,              // 0=router, 1=wds, 2=relay, 3=mesh, 4=ap, 6=passthrough
+    lan_ip: "192.168.14.1",
+    lan_netmask: "255.255.255.0",
+    guest_ip: "192.168.9.1",
+    guest_netmask: "255.255.255.0",
+    uptime: 54525,        // seconds since boot
+    timestamp: 1775919252,
+    tzoffset: "+0100",
+    cpu: {
+      temperature: 55     // degrees Celsius
+    },
+    flash_total: 256,     // MB
+    flash_free: 120,      // MB
+    flash_app: 80,        // MB used by apps
+    mcu: {}               // MCU status (model-dependent)
+  },
+  network: [              // WAN/LAN interface status
+    { interface: "wan", proto: "dhcp", up: true, ipaddr: "...", device: "eth0" }
+  ],
+  wifi: [                 // Wi-Fi radio status
+    { ssid: "GL-MT3000", channel: 36, signal: -45, guest: false }
+  ],
+  service: [              // Running services
+    { name: "wireguard", status: 1 },
+    { name: "adguardhome", status: 0 }
+  ]
+}
+```
 
-// System info (board info)
-this.$store.state.systemInfo
-// => { board_info: { hostname, model, ... } }
+### this.$store.state.systemInfo
 
-// Session ID
-this.$store.state.sid
+```js
+{
+  board_info: {
+    hostname: "GL-MT3000",
+    model: "GL-MT3000",
+    architecture: "ARMv8 Processor rev 4",
+    kernel_version: "5.4.211",
+    openwrt_version: "21.02-SNAPSHOT"
+  },
+  firmware_version: "4.8.1",
+  firmware_type: "release",
+  country_code: "us",
+  mac: "94:83:C4:xx:xx:xx",
+  sn: "...",
+  cpu_num: 2,
+  ddns: false,
+  hardware_feature: {
+    fan: false,            // has fan control
+    mcu: false,            // has MCU
+    noled: false,          // LED disabled
+    build_in_modem: false  // has cellular modem
+  },
+  software_feature: {
+    repeater_eap: false    // supports WPA Enterprise repeater
+  },
+  hidden_features: []      // features hidden in UI
+}
+```
+
+### Other store state
+
+```js
+this.$store.state.lang            // "en", "zh-cn", "de", etc.
+this.$store.state.theme           // "dark" or "light"
+this.$store.state.model           // "GL-MT3000"
+this.$store.state.is2c            // boolean, 2.4GHz only model
+this.$store.state.screenWidth     // viewport width in pixels
+this.$store.state.clientList      // connected device list
+this.$store.state.initInfo        // initialization data
 ```
 
 ### Getting Uptime (the correct way)
 
-Do NOT call `system.info` via RPC. Use the Vuex store instead:
+Do NOT call `system.info` via RPC — it is not proxied and triggers an error popup.
+Use the Vuex store:
 
 ```js
 computed: {
@@ -130,6 +195,14 @@ computed: {
     const h = Math.floor((s % 86400) / 3600);
     const m = Math.floor((s % 3600) / 60);
     return d + 'd ' + h + 'h ' + m + 'm';
+  },
+  cpuTemp() {
+    const sys = (this.$store.state.systemStatus || {}).system || {};
+    return sys.cpu ? sys.cpu.temperature + ' C' : '--';
+  },
+  lanIp() {
+    const sys = (this.$store.state.systemStatus || {}).system || {};
+    return sys.lan_ip || '--';
   }
 }
 ```
