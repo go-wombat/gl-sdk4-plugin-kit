@@ -257,28 +257,56 @@ on GL-MT3000 firmware 4.8.1:
 
 | Namespace | Confirmed Methods |
 |-----------|-------------------|
-| `system` | `get_status`, `get_info` |
-| `clients` | `get_status` |
+| `system` | `get_status`, `get_info`, `get_load`, `get_timezone_config`, `get_usb3_disable` |
+| `vpn-client` | `get_status`, `get_all_config_list`, `get_tunnel`, `get_connection_methods`, `get_vpn_using_status` |
+| `wg-client` | `get_group_list` |
+| `wg-server` | `get_config`, `get_setting`, `get_peer_list` |
+| `ovpn-client` | `get_group_list` |
+| `ovpn-server` | `get_config`, `get_setting`, `get_user_list` |
+| `clients` | `get_status`, `get_list` |
 | `wifi` | `get_status`, `get_config` |
+| `firewall` | `get_port_forward_list`, `get_rule_list`, `get_zone_list`, `get_dmz`, `get_wan_access` |
+| `network` | `get_advance_config`, `get_netnat_config`, `get_arp_list`, `check_wan_cable` |
+| `lan` | `get_config_list`, `get_static_bind_list`, `get_wan_info` |
+| `cable` | `get_config`, `get_ports_config`, `get_ports_status`, `get_status` |
+| `dns` | `get_config`, `get_info`, `get_host` |
 | `led` | `get_config` |
 | `fan` | `get_status`, `get_config` |
-| `dns` | `get_config`, `get_info` |
 | `ddns` | `get_status`, `get_config` |
 | `tailscale` | `get_status`, `get_config` |
 | `adguardhome` | `get_config` |
-| `repeater` | `get_status`, `get_config` |
+| `repeater` | `get_status`, `get_config`, `get_saved_ap_list` |
 | `tor` | `get_status`, `get_config` |
 | `upgrade` | `get_config` |
 | `cloud` | `get_config` |
+| `timer` | `get_led`, `get_reboot`, `get_wifi`, `get_screen` |
+| `parental-control` | `get_config`, `get_status`, `get_mode` |
+| `kmwan` | `get_config`, `get_status` |
+| `plugins` | `get_config`, `get_repository_status` |
+| `local-access` | `get_config` |
+| `switch-button` | `get_config`, `get_funcs` |
+| `edgerouter` | `get_config`, `get_status` |
+| `tethering` | `get_config`, `get_status` |
+| `ipv6` | `get_ipv6` |
+| `igmp` | `get_config` |
+| `ui` | `get_menu_list` |
+| `logread` | `get_module_name` |
+| `luci` | `get_status` |
+| `netmode` | `get_mode` |
+| `black_white_list` | `get_config` |
+| `rtty` | `get_config` *(hidden module)* |
+| `qos` | `get_config` *(hidden module)* |
 
-**Not available via RPC** (use ubus via SSH or Vuex store instead):
+**85 read methods confirmed** across 37 modules. See [api-methods.md](api-methods.md) for the complete 302-method reference.
 
-- `system.board`, `system.info` — use `system.get_status` and `system.get_info`
-- `network.status` — network data is in `system.get_status` response
-- `wireguard`, `openvpn` — service status is in `system.get_status`
+**Not available via RPC** (standard ubus methods are not proxied):
+
+- `system.board`, `system.info` — use `system.get_info` instead
+- `network.status` — use `system.get_status` (contains network array)
+- `wireguard.*`, `openvpn.*` — use `vpn-client.*`, `wg-client.*`, `ovpn-client.*`
 
 > Available namespaces vary by firmware version and installed packages.
-> Use `glplugin extract` to discover methods from your firmware version.
+> Use `glplugin extract --rpc` to discover methods from your firmware version.
 
 ### Commonly Used Calls
 
@@ -311,6 +339,33 @@ this.$rpcRequest('call', ['sid', 'dns', 'get_config', {}])
 
 // Get Tailscale status (CONFIRMED)
 this.$rpcRequest('call', ['sid', 'tailscale', 'get_status', {}])
+
+// Get VPN connection status (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'vpn-client', 'get_status', {}])
+// => { status_list: [{type, peer_name, domain, status, tx_bytes, rx_bytes, ipv4}], mode }
+
+// Get all VPN configs (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'vpn-client', 'get_all_config_list', {}])
+// => { configs: { wireguard: [...], openvpn: [...] } }
+
+// Get full client list with traffic data (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'clients', 'get_list', {}])
+// => { clients: [{ip, mac, name, iface, online, total_rx, total_tx, ...}] }
+
+// Get ARP table (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'network', 'get_arp_list', {}])
+// => { entries: [{ip, mac, device}] }
+
+// Scan nearby Wi-Fi networks (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'repeater', 'scan', {}])
+// => { res: [{ssid, signal, channel, band, encryption, bssid}] }
+
+// Get firewall port forwards (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'firewall', 'get_port_forward_list', {}])
+
+// Get WAN connection info (CONFIRMED)
+this.$rpcRequest('call', ['sid', 'cable', 'get_status', {}])
+// => { protocol, status, ipv4: {ip, gateway, dns} }
 ```
 
 ---

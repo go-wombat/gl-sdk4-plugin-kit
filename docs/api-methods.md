@@ -10,9 +10,9 @@
 |--------|------|-------------|
 | `system.get_status` | [tested] | Network, Wi-Fi, services, uptime, memory, CPU temp |
 | `system.get_info` | [tested] | Board info, firmware, hardware/software features |
-| `system.get_load` | read | CPU load average |
-| `system.get_timezone_config` | read | Timezone settings |
-| `system.get_usb3_disable` | read | USB3 status |
+| `system.get_load` | [tested] | CPU load average |
+| `system.get_timezone_config` | [tested] | Timezone settings |
+| `system.get_usb3_disable` | [tested] | USB3 status |
 | `system.set_timezone_config` | [write] | Set timezone |
 | `system.set_usb3_disable` | [write] | Enable/disable USB3 |
 | `system.set_password` | [write] | Change admin password |
@@ -25,9 +25,9 @@
 |--------|------|-------------|
 | `vpn-client.get_status` | [tested] | Active VPN connections, TX/RX bytes |
 | `vpn-client.get_all_config_list` | [tested] | All VPN configs (WireGuard + OpenVPN) |
-| `vpn-client.get_tunnel` | read | Get tunnel config |
-| `vpn-client.get_connection_methods` | read | Available connection methods |
-| `vpn-client.get_vpn_using_status` | read | Per-client VPN usage |
+| `vpn-client.get_tunnel` | [tested] | Get tunnel config |
+| `vpn-client.get_connection_methods` | [tested] | Available connection methods |
+| `vpn-client.get_vpn_using_status` | [tested] | Per-client VPN usage |
 | `vpn-client.add_tunnel` | [write] | Add VPN tunnel |
 | `vpn-client.set_tunnel` | [write] | Modify tunnel |
 | `vpn-client.remove_tunnel` | [write] | Remove tunnel |
@@ -67,9 +67,9 @@
 
 | Method | Type | Description |
 |--------|------|-------------|
-| `wg-server.get_config` | read | Server config |
-| `wg-server.get_setting` | read | Server settings |
-| `wg-server.get_peer_list` | read | Connected peers |
+| `wg-server.get_config` | [tested] | Server config |
+| `wg-server.get_setting` | [tested] | Server settings |
+| `wg-server.get_peer_list` | [tested] | Connected peers |
 | `wg-server.set_config` | [write] | Set server config |
 | `wg-server.set_setting` | [write] | Set server settings |
 | `wg-server.set_peer` | [write] | Edit peer |
@@ -85,7 +85,7 @@
 
 | Method | Type | Description |
 |--------|------|-------------|
-| `ovpn-client.get_group_list` | read | OpenVPN provider groups |
+| `ovpn-client.get_group_list` | [tested] | OpenVPN provider groups |
 | `ovpn-client.get_config_list` | read | Configs in group |
 | `ovpn-client.get_recommend_config` | read | Recommended config |
 | `ovpn-client.get_third_config` | read | Third-party configs |
@@ -105,9 +105,9 @@
 
 | Method | Type | Description |
 |--------|------|-------------|
-| `ovpn-server.get_config` | read | Server config |
-| `ovpn-server.get_setting` | read | Server settings |
-| `ovpn-server.get_user_list` | read | Connected users |
+| `ovpn-server.get_config` | [tested] | Server config |
+| `ovpn-server.get_setting` | [tested] | Server settings |
+| `ovpn-server.get_user_list` | [tested] | Connected users |
 | `ovpn-server.set_config` | [write] | Set config |
 | `ovpn-server.set_setting` | [write] | Set settings |
 | `ovpn-server.add_user` | [write] | Add user |
@@ -140,11 +140,11 @@
 
 | Method | Type | Description |
 |--------|------|-------------|
-| `firewall.get_port_forward_list` | read | Port forwarding rules |
-| `firewall.get_rule_list` | read | Firewall rules |
-| `firewall.get_zone_list` | read | Firewall zones |
-| `firewall.get_dmz` | read | DMZ config |
-| `firewall.get_wan_access` | read | WAN access settings |
+| `firewall.get_port_forward_list` | [tested] | Port forwarding rules |
+| `firewall.get_rule_list` | [tested] | Firewall rules |
+| `firewall.get_zone_list` | [tested] | Firewall zones |
+| `firewall.get_dmz` | [tested] | DMZ config |
+| `firewall.get_wan_access` | [tested] | WAN access settings |
 | `firewall.add_port_forward` | [write] | Add port forward |
 | `firewall.remove_port_forward` | [write] | Remove port forward |
 | `firewall.set_port_forward` | [write] | Edit port forward |
@@ -161,7 +161,7 @@
 |--------|------|-------------|
 | `dns.get_config` | [tested] | DNS config + server list (DNSCrypt/DoH) |
 | `dns.get_info` | [tested] | DNS resolver info |
-| `dns.get_host` | read | Custom DNS hosts |
+| `dns.get_host` | [tested] | Custom DNS hosts |
 | `dns.set_config` | [write] | Set DNS config |
 | `dns.set_host` | [write] | Set custom host |
 
@@ -169,11 +169,11 @@
 
 | Method | Type | Description |
 |--------|------|-------------|
-| `network.get_advance_config` | read | Advanced network settings |
-| `network.get_netnat_config` | read | Hardware NAT config |
-| `network.get_arp_list` | read | ARP table |
+| `network.get_advance_config` | [tested] | Advanced network settings |
+| `network.get_netnat_config` | [tested] | Hardware NAT config |
+| `network.get_arp_list` | [tested] | ARP table |
 | `network.get_available_address_list` | read | Available address pools |
-| `network.check_wan_cable` | read | WAN cable detection |
+| `network.check_wan_cable` | [tested] | WAN cable detection |
 | `network.set_advance_config` | [write] | Set advanced config |
 | `network.set_netnat_config` | [write] | Set NAT config |
 
@@ -181,9 +181,9 @@
 
 | Method | Type | Description |
 |--------|------|-------------|
-| `lan.get_config_list` | read | LAN config |
-| `lan.get_static_bind_list` | read | Static DHCP bindings |
-| `lan.get_wan_info` | read | WAN info from LAN perspective |
+| `lan.get_config_list` | [tested] | LAN config |
+| `lan.get_static_bind_list` | [tested] | Static DHCP bindings |
+| `lan.get_wan_info` | [tested] | WAN info from LAN perspective |
 | `lan.set_config` | [write] | Set LAN config |
 | `lan.add_static_bind` | [write] | Add static DHCP binding |
 | `lan.remove_static_bind` | [write] | Remove binding |
@@ -195,7 +195,7 @@
 |--------|------|-------------|
 | `repeater.get_status` | [tested] | Repeater state (idle/connecting/connected) |
 | `repeater.get_config` | [tested] | Repeater config |
-| `repeater.get_saved_ap_list` | read | Saved Wi-Fi networks |
+| `repeater.get_saved_ap_list` | [tested] | Saved Wi-Fi networks |
 | `repeater.get_channel_prompt` | read | Channel prompt settings |
 | `repeater.scan` | read | Scan for Wi-Fi networks |
 | `repeater.connect` | [write] | Connect to network |
@@ -215,7 +215,7 @@
 | `logread.get_crash_log` | read | Crash log |
 | `logread.get_nginx_log` | read | Nginx error log |
 | `logread.get_esim_log` | read | eSIM log |
-| `logread.get_module_name` | read | Log module names |
+| `logread.get_module_name` | [tested] | Log module names |
 | `logread.get_config` | read | Log config |
 | `logread.set_config` | [write] | Set log config |
 | `logread.export_logs` | read | Export all logs |
