@@ -66,7 +66,7 @@ export default {
   data() {
     return {
       sysStatus: {},
-      tailscaleStatus: {},
+      tailscaleConfig: {},
       torStatus: {},
     };
   },
@@ -75,16 +75,16 @@ export default {
       return (this.sysStatus.service || []);
     },
     wgRunning() {
-      return this.isServiceRunning('wireguard');
+      return this.isServiceRunning('wgserver');
     },
     ovpnRunning() {
-      return this.isServiceRunning('openvpn');
+      return this.isServiceRunning('ovpnserver');
     },
     tailscaleRunning() {
-      return this.tailscaleStatus.enabled || false;
+      return this.tailscaleConfig.enabled || false;
     },
     tailscaleIp() {
-      return this.tailscaleStatus.ip || '';
+      return this.tailscaleConfig.lan_ip || '';
     },
     torRunning() {
       return this.isServiceRunning('tor');
@@ -116,7 +116,7 @@ export default {
     },
     async fetchData() {
       this.sysStatus = await this.rpc('system', 'get_status') || {};
-      this.tailscaleStatus = await this.rpc('tailscale', 'get_status') || {};
+      this.tailscaleConfig = await this.rpc('tailscale', 'get_config') || {};
       this.torStatus = await this.rpc('tor', 'get_status') || {};
     },
     isServiceRunning(name) {

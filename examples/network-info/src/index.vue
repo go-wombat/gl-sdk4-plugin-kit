@@ -99,7 +99,9 @@ export default {
         rows.push({ label: 'CPU Temp', value: s.cpu.temperature + ' C' });
       }
       if (s.flash_total) {
-        rows.push({ label: 'Flash Free', value: s.flash_free + ' / ' + s.flash_total + ' MB' });
+        var freeMB = (s.flash_free / 1024 / 1024).toFixed(0);
+        var totalMB = (s.flash_total / 1024 / 1024).toFixed(0);
+        rows.push({ label: 'Flash Free', value: freeMB + ' / ' + totalMB + ' MB' });
       }
       if (s.guest_ip) {
         rows.push({ label: 'Guest IP', value: s.guest_ip });

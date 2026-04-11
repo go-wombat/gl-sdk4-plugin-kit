@@ -9,20 +9,20 @@
       <div v-if="wanAccess" class="wan-grid">
         <div class="wan-item">
           <span class="wan-label">Ping</span>
-          <span :class="wanAccess.ping ? 'status-on' : 'status-off'">
-            {{ wanAccess.ping ? 'Enabled' : 'Disabled' }}
+          <span :class="wanAccess.enable_ping ? 'status-on' : 'status-off'">
+            {{ wanAccess.enable_ping ? 'Enabled' : 'Disabled' }}
           </span>
         </div>
         <div class="wan-item">
           <span class="wan-label">SSH</span>
-          <span :class="wanAccess.ssh ? 'status-on' : 'status-off'">
-            {{ wanAccess.ssh ? 'Enabled' : 'Disabled' }}
+          <span :class="wanAccess.enable_ssh ? 'status-on' : 'status-off'">
+            {{ wanAccess.enable_ssh ? 'Enabled' : 'Disabled' }}
           </span>
         </div>
         <div class="wan-item">
           <span class="wan-label">HTTPS</span>
-          <span :class="wanAccess.https ? 'status-on' : 'status-off'">
-            {{ wanAccess.https ? 'Enabled' : 'Disabled' }}
+          <span :class="wanAccess.enable_https ? 'status-on' : 'status-off'">
+            {{ wanAccess.enable_https ? 'Enabled' : 'Disabled' }}
           </span>
         </div>
       </div>
