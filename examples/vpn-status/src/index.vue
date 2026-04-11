@@ -109,17 +109,15 @@ export default {
     this.fetchData();
   },
   methods: {
-    fetchData() {
-      var self = this;
-      this.$rpcRequest('call', ['sid', 'system', 'get_status', {}])
-        .then(function (res) { self.sysStatus = res || {}; })
-        .catch(function () {});
-      this.$rpcRequest('call', ['sid', 'tailscale', 'get_status', {}])
-        .then(function (res) { self.tailscaleStatus = res || {}; })
-        .catch(function () {});
-      this.$rpcRequest('call', ['sid', 'tor', 'get_status', {}])
-        .then(function (res) { self.torStatus = res || {}; })
-        .catch(function () {});
+    rpc(module, func, params) {
+      return this.$rpcRequest('call', ['sid', module, func, params || {}])
+        .then(function (r) { return r; })
+        .catch(function () { return null; });
+    },
+    async fetchData() {
+      this.sysStatus = await this.rpc('system', 'get_status') || {};
+      this.tailscaleStatus = await this.rpc('tailscale', 'get_status') || {};
+      this.torStatus = await this.rpc('tor', 'get_status') || {};
     },
     isServiceRunning(name) {
       var svc = this.services.find(function (s) { return s.name === name; });

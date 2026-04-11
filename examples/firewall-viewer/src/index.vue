@@ -109,34 +109,36 @@ export default {
     this.fetchData();
   },
   methods: {
-    fetchData() {
-      var self = this;
+    rpc(module, func, params) {
+      return this.$rpcRequest('call', ['sid', module, func, params || {}])
+        .then(function (r) { return r; })
+        .catch(function () { return null; });
+    },
+    async fetchData() {
+      var fwdRes = await this.rpc('firewall', 'get_port_forward_list');
+      if (fwdRes) {
+        this.portForwards = Array.isArray(fwdRes)
+          ? fwdRes
+          : (fwdRes.list || fwdRes.rules || fwdRes.port_forward_list || []);
+      } else {
+        this.forwardError = 'Failed to load port forwards.';
+      }
 
-      this.$rpcRequest('call', ['sid', 'firewall', 'get_port_forward_list', {}])
-        .then(function (res) {
-          self.portForwards = (res && (res.list || res.rules || res.port_forward_list)) || [];
-          if (Array.isArray(res)) self.portForwards = res;
-        })
-        .catch(function () {
-          self.forwardError = 'Failed to load port forwards.';
-        });
+      var ruleRes = await this.rpc('firewall', 'get_rule_list');
+      if (ruleRes) {
+        this.rules = Array.isArray(ruleRes)
+          ? ruleRes
+          : (ruleRes.list || ruleRes.rules || ruleRes.rule_list || []);
+      } else {
+        this.ruleError = 'Failed to load firewall rules.';
+      }
 
-      this.$rpcRequest('call', ['sid', 'firewall', 'get_rule_list', {}])
-        .then(function (res) {
-          self.rules = (res && (res.list || res.rules || res.rule_list)) || [];
-          if (Array.isArray(res)) self.rules = res;
-        })
-        .catch(function () {
-          self.ruleError = 'Failed to load firewall rules.';
-        });
-
-      this.$rpcRequest('call', ['sid', 'firewall', 'get_wan_access', {}])
-        .then(function (res) {
-          self.wanAccess = res || {};
-        })
-        .catch(function () {
-          self.wanError = 'Failed to load WAN access settings.';
-        });
+      var wanRes = await this.rpc('firewall', 'get_wan_access');
+      if (wanRes) {
+        this.wanAccess = wanRes;
+      } else {
+        this.wanError = 'Failed to load WAN access settings.';
+      }
     },
   },
 };

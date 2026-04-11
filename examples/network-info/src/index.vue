@@ -142,14 +142,14 @@ export default {
     this.fetchData();
   },
   methods: {
-    fetchData() {
-      var self = this;
-      this.$rpcRequest('call', ['sid', 'system', 'get_info', {}])
-        .then(function (res) { self.sysInfo = res || {}; })
-        .catch(function () {});
-      this.$rpcRequest('call', ['sid', 'system', 'get_status', {}])
-        .then(function (res) { self.sysStatus = res || {}; })
-        .catch(function () {});
+    rpc(module, func, params) {
+      return this.$rpcRequest('call', ['sid', module, func, params || {}])
+        .then(function (r) { return r; })
+        .catch(function () { return null; });
+    },
+    async fetchData() {
+      this.sysInfo = await this.rpc('system', 'get_info') || {};
+      this.sysStatus = await this.rpc('system', 'get_status') || {};
     },
     formatUptime(s) {
       if (!s && s !== 0) return '--';

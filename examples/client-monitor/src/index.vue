@@ -86,27 +86,22 @@ export default {
     this.fetchData();
   },
   methods: {
-    fetchData() {
-      var self = this;
-      self.loading = true;
-      self.error = '';
-
-      this.$rpcRequest('call', ['sid', 'clients', 'get_list', {}])
-        .then(function (res) {
-          self.clients = (res && res.clients) || [];
-        })
-        .catch(function () {
-          self.error = 'Failed to load client list.';
-        });
-
-      this.$rpcRequest('call', ['sid', 'clients', 'get_status', {}])
-        .then(function (res) {
-          self.status = res || {};
-        })
-        .catch(function () {})
-        .finally(function () {
-          self.loading = false;
-        });
+    rpc(module, func, params) {
+      return this.$rpcRequest('call', ['sid', module, func, params || {}])
+        .then(function (r) { return r; })
+        .catch(function () { return null; });
+    },
+    async fetchData() {
+      this.loading = true;
+      this.error = '';
+      var listRes = await this.rpc('clients', 'get_list');
+      if (listRes) {
+        this.clients = listRes.clients || [];
+      } else {
+        this.error = 'Failed to load client list.';
+      }
+      this.status = await this.rpc('clients', 'get_status') || {};
+      this.loading = false;
     },
     formatIface(iface) {
       if (!iface) return '--';

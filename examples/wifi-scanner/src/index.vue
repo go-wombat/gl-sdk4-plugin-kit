@@ -63,20 +63,24 @@ export default {
     this.doScan();
   },
   methods: {
-    doScan() {
-      var self = this;
-      self.scanning = true;
-      self.error = '';
-      this.$rpcRequest('call', ['sid', 'repeater', 'scan', {}])
-        .then(function (res) {
-          self.networks = (res && res.res) || [];
-        })
-        .catch(function () {
-          self.error = 'Failed to scan Wi-Fi networks. Please try again.';
-        })
-        .finally(function () {
-          self.scanning = false;
-        });
+    rpc(module, func, params) {
+      return this.$rpcRequest('call', ['sid', module, func, params || {}])
+        .then(function (r) { return r; })
+        .catch(function () { return null; });
+    },
+    async doScan() {
+      this.scanning = true;
+      this.error = '';
+      try {
+        var res = await this.rpc('repeater', 'scan');
+        if (res) {
+          this.networks = res.res || [];
+        } else {
+          this.error = 'Failed to scan Wi-Fi networks. Please try again.';
+        }
+      } finally {
+        this.scanning = false;
+      }
     },
     signalColor(signal) {
       if (signal >= -50) return 'var(--success-color)';
