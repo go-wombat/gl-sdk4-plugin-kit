@@ -297,7 +297,7 @@ on GL-MT3000 firmware 4.8.1:
 | `rtty` | `get_config` *(hidden module)* |
 | `qos` | `get_config` *(hidden module)* |
 
-**85 read methods confirmed** across 37 modules. See [api-methods.md](api-methods.md) for the complete 302-method reference.
+**85 read methods confirmed** across 37 modules. See [api-methods.md](api-methods.md) for the full reference (302 methods discovered, ~295 working; 7 are feature-gated or require specific hardware/packages).
 
 **Not available via RPC** (standard ubus methods are not proxied):
 
@@ -435,7 +435,7 @@ const { createClient } = require('gl-sdk4-plugin-kit/lib/api-client');
 
 const client = await createClient('192.168.8.1', 'password');
 
-// All 302 methods available via namespaced API
+// ~300 methods available via namespaced API (some are feature-gated)
 const info = await client.system.getInfo();
 const clients = await client.clients.getList();
 const vpn = await client.vpnClient.getStatus();

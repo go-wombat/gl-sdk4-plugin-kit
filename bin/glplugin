@@ -18,13 +18,15 @@ function printHelp() {
   gl-sdk4-plugin-kit — Build native GL.iNet admin panel plugins
 
   Usage:
-    glplugin init <name>             Scaffold a new plugin project
-    glplugin build                   Build plugin (webpack + gzip)
-    glplugin package                 Create .ipk package (survives reboots)
-    glplugin deploy <host>           Deploy to router via SCP
-    glplugin extract <host>          Extract component info from router firmware
-    glplugin test <host> [password]  Test plugin and API against live router
-    glplugin help                    Show this help
+    glplugin init <name>              Scaffold a new plugin project
+    glplugin build                    Build plugin (webpack + gzip)
+    glplugin package                  Create .ipk package (survives reboots)
+    glplugin deploy <host>            Deploy to router via SCP
+    glplugin extract root@<host>      Extract components via SSH
+    glplugin extract <host> --rpc     Discover API endpoints via HTTP (no SSH)
+    glplugin extract root@<host> --full  Both SSH + RPC extraction
+    glplugin test <host> [password]   Test plugin and API against live router
+    glplugin help                     Show this help
 
   Examples:
     glplugin init my-scanner
@@ -32,6 +34,7 @@ function printHelp() {
     glplugin package
     glplugin deploy root@192.168.14.1
     glplugin test 192.168.14.1
+    glplugin extract 192.168.14.1 --rpc
   `);
 }
 

@@ -126,6 +126,11 @@ p { color: var(--text-color); }
 
 Control your router from scripts without SSH:
 
+```bash
+# Install locally in your project (NOT global — global install won't resolve lib/ imports)
+npm install gl-sdk4-plugin-kit
+```
+
 ```js
 const { createClient } = require('gl-sdk4-plugin-kit/lib/api-client');
 
@@ -150,18 +155,20 @@ await client.rpc('vpn-client', 'set_tunnel', tunnels.tunnels[0]); // re-enable
 
 ## Vue API Mixin
 
-For advanced plugins, use the typed API mixin ([lib/api.js](lib/api.js)) with 44 namespaces
-covering all 302 methods:
+> **Note:** Plugins are webpack-bundled independently and cannot `require()` from
+> the toolkit at runtime. The mixin code must be **copied into your plugin** or
+> inlined. See [lib/api.js](lib/api.js) for the source. The simpler `rpc()` helper
+> shown in the Writing Plugins section above is the recommended approach.
+
+For reference, the full mixin provides 46 namespaces with ~300 methods:
 
 ```js
-const { glApiMixin } = require('gl-sdk4-plugin-kit/lib/api');
-
+// Copy createGlApi() and glApiMixin from lib/api.js into your plugin, then:
 export default {
   mixins: [glApiMixin],
   async created() {
     const info = await this.glApi.system.getInfo();
     const clients = await this.glApi.clients.getList();
-    await this.glApi.firewall.addPortForward({ ... });
   }
 };
 ```
@@ -172,7 +179,7 @@ export default {
 - [API Reference](docs/api.md) — RPC calls and backend communication
 - [Menu Format](docs/menu.md) — How to define menu entries
 - [Theme Variables](docs/theme.md) — CSS variables for native look and feel
-- [Complete API Methods](docs/api-methods.md) — All 302 RPC methods across 40+ modules
+- [Complete API Methods](docs/api-methods.md) — 302 RPC methods discovered, ~295 confirmed working
 - [Type Definitions](lib/types.js) — JSDoc types for all API responses (IDE autocomplete)
 - [Write Methods — VPN](docs/write-methods-vpn.md) — 38 VPN write method parameters
 - [Write Methods — Network](docs/write-methods-network.md) — 34 network/firewall write method parameters
