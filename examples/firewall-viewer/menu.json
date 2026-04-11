@@ -1,0 +1,7 @@
+{
+  "index": 90,
+  "view": "firewallviewer",
+  "title": "Firewall",
+  "level": 2,
+  "parent": "network"
+}
