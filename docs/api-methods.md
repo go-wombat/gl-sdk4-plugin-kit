@@ -253,3 +253,29 @@
 | `mptun` | get_config, get_token, set_config | AstroWarp tunnel |
 | `edgerouter` | get_config, get_status, set_config | Edge router |
 | `ui` | get_menu_list, get_remote_langs, set_lang, set_inited_internet, update_langs | UI settings |
+| `rtty` | get_config, set_config | Remote terminal (web + SSH) — hidden module |
+| `qos` | get_config, set_config | Quality of Service — hidden module |
+| `black_white_list` | get_config, set_config, set_single_mac | MAC filter lists |
+
+## Hidden Modules (not in any view, discovered by brute force)
+
+| Method | Response |
+|--------|----------|
+| `rtty.get_config` | `{ web_enabled: false, ssh_enabled: false }` |
+| `qos.get_config` | `{ enable: false, mode: "0" }` |
+
+## Security Notes
+
+The following sensitive data is returned in plain text by the RPC API:
+
+- **Wi-Fi passwords** — `system.get_status` and `wifi.get_config` return `passwd`/`key` fields
+- **Saved Wi-Fi passwords** — `repeater.get_saved_ap_list` returns `key` for all saved networks
+- **OpenVPN DH parameters** — `ovpn-server.get_config` returns full DH key
+- **WireGuard configs** — `vpn-client.get_all_config_list` returns endpoint, allowed IPs, DNS
+- **DNS hosts file** — `dns.get_host` returns `/etc/hosts` content
+- **WAN IP** — `cable.get_status` and `ddns.get_status` expose public IP
+- **ARP table** — `network.get_arp_list` lists all devices on all interfaces
+- **Client traffic history** — `clients.get_list` returns total TX/RX per device since first connection
+
+Any plugin with a valid session token has **full read access** to all this data.
+There is no per-module ACL — authentication grants access to everything.
