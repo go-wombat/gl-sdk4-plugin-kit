@@ -36,7 +36,7 @@ const info  = await this.$rpcRequest('call', ['sid', 'system', 'info', {}]);
   "jsonrpc": "2.0",
   "id": 1,
   "method": "call",
-  "params": ["<session_token>", "system", "board", {}]
+  "params": ["<session_token>", "system", "get_info", {}]
 }
 ```
 
@@ -46,7 +46,7 @@ The response:
 {
   "jsonrpc": "2.0",
   "id": 1,
-  "result": { "hostname": "GL-MT3000", "model": "GL-MT3000", ... }
+  "result": { "board_info": { "hostname": "GL-MT3000", "model": "GL-MT3000" }, ... }
 }
 ```
 
@@ -100,12 +100,19 @@ curl -s http://ROUTER/rpc -d '{"jsonrpc":"2.0","id":2,"method":"login","params":
 
 ## Important: Not All ubus Methods Are Proxied
 
-GL.iNet's RPC layer does **not** expose all OpenWrt ubus methods. It only proxies
-methods that GL.iNet has explicitly whitelisted. For example:
+GL.iNet's RPC layer does **not** expose standard OpenWrt ubus methods. It only
+proxies GL.iNet's own methods (typically `get_status`, `get_config`, `get_info`).
 
-- `system.board` -- works (proxied)
-- `system.get_load` -- works (proxied)
-- `system.info` -- **does NOT work** (not proxied, triggers global error popup)
+Standard ubus calls that **do NOT work** via RPC:
+
+- `system.board` -- "Method not found"
+- `system.info` -- "Method not found"
+- `network.status` -- "Method not found"
+
+GL.iNet equivalents that **do work**:
+
+- `system.get_info` -- returns board info, firmware, hardware features
+- `system.get_status` -- returns uptime, network, wifi, services
 
 If you call a non-proxied method, the admin panel shows a global error:
 "Unknown error occurred. Please check the network environment or reboot the device."

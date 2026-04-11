@@ -98,8 +98,8 @@ export default {
   },
   methods: {
     refresh() {
-      this.$rpcRequest('call', ['sid', 'system', 'board', {}]).then(res => {
-        this.info = res.model;
+      this.$rpcRequest('call', ['sid', 'system', 'get_info', {}]).then(res => {
+        this.info = res.board_info.model;
       });
     },
   },
