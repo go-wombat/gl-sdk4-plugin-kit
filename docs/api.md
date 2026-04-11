@@ -136,28 +136,46 @@ without making RPC calls — this is how GL.iNet's own pages get system data.
     lan_netmask: "255.255.255.0",
     guest_ip: "192.168.9.1",
     guest_netmask: "255.255.255.0",
-    uptime: 54525,        // seconds since boot
-    timestamp: 1775919252,
-    tzoffset: "+0100",
-    cpu: {
-      temperature: 55     // degrees Celsius
-    },
-    flash_total: 256,     // MB
-    flash_free: 120,      // MB
-    flash_app: 80,        // MB used by apps
-    mcu: {}               // MCU status (model-dependent)
+    uptime: 77851.23,     // seconds since boot (float)
+    timestamp: 1775935379,
+    tzoffset: "+0200",
+    cpu: { temperature: 59 },
+    flash_total: 268435456,     // bytes (256 MB)
+    flash_free: 160931840,      // bytes
+    flash_app: 1699840,         // bytes
+    memory_total: 503181312,    // bytes (480 MB)
+    memory_free: 172847104,     // bytes
+    memory_buff_cache: 120700928, // bytes
+    load_average: [0.18, 0.32, 0.27],  // 1/5/15 min
+    netnat_enabled: true,
+    ipv6_enabled: false,
+    ddns_enabled: false
   },
-  network: [              // WAN/LAN interface status
-    { interface: "wan", proto: "dhcp", up: true, ipaddr: "...", device: "eth0" }
+  network: [
+    { interface: "wan", up: true, online: true },
+    { interface: "wwan", up: false, online: false },
+    { interface: "tethering", up: false, online: false }
   ],
-  wifi: [                 // Wi-Fi radio status
-    { ssid: "GL-MT3000", channel: 36, signal: -45, guest: false }
+  wifi: [
+    { ssid: "MyNetwork", band: "2G", channel: 1, encryption: "sae-mixed",
+      passwd: "secret", hidden: false, guest: false, name: "wifi2g", up: true, mld: false },
+    { ssid: "MyNetwork", band: "5G", channel: 48, encryption: "sae-mixed",
+      passwd: "secret", hidden: false, guest: false, name: "wifi5g", up: true, mld: false }
   ],
-  service: [              // Running services
-    { name: "wireguard", status: 1 },
-    { name: "adguardhome", status: 0 }
+  service: [
+    { name: "wgserver", status: 0 },
+    { name: "ovpnserver", status: 0 },
+    { name: "adguard", status: 0 },
+    { name: "tor", status: 0 },
+    { name: "tailscale", status: 0 },
+    { name: "zerotier", status: 0 }
+  ],
+  client: [
+    { wireless_total: 5, cable_total: 0 }
   ]
 }
+
+// NOTE: Wi-Fi passwords are returned in plain text in the passwd field!
 ```
 
 ### this.$store.state.systemInfo

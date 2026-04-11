@@ -143,6 +143,7 @@ See [lib/safe-rpc-mixin.js](lib/safe-rpc-mixin.js) for the full mixin with `safe
 - [API Reference](docs/api.md) — RPC calls and backend communication
 - [Menu Format](docs/menu.md) — How to define menu entries
 - [Theme Variables](docs/theme.md) — CSS variables for native look and feel
+- [Complete API Methods](docs/api-methods.md) — All 302 RPC methods across 40+ modules
 - [Type Definitions](lib/types.js) — JSDoc types for all API responses (IDE autocomplete)
 
 ## Examples
