@@ -1,0 +1,24 @@
+{
+  "name": "gl-sdk4-plugin-kit",
+  "version": "0.1.0",
+  "description": "Unofficial toolkit for building native GL.iNet router admin panel plugins",
+  "keywords": ["gl-inet", "openwrt", "router", "plugin", "sdk4", "vue"],
+  "author": "",
+  "license": "MIT",
+  "bin": {
+    "glplugin": "./bin/glplugin"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "template/",
+    "docs/"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}
