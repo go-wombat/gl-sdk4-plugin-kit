@@ -692,5 +692,14 @@
         "aw_url"
       ]
     }
+  },
+  "feature_gated": {
+    "logread.get_config": "Method not found — may not exist on all firmware versions",
+    "modem.get_apn_poll_enabled": "Method not found — requires cellular modem hardware",
+    "bark.get_config": "Method not found — requires Bark parental control package",
+    "bark.get_status": "Method not found — requires Bark parental control package",
+    "mvas.get_connect_info": "Method not found — requires multi-SIM hardware",
+    "plugins.get_package_info": "Requires {name: \"package-name\"} parameter, returns Internal error with {}",
+    "mptun.get_token": "Timeout — requires AstroWarp cloud setup"
   }
 }

@@ -1,8 +1,17 @@
 # Complete GL.iNet RPC API Reference
 
 > 302 methods extracted from GL-MT3000 firmware 4.8.1 (all views).
-> Methods marked [tested] have been confirmed working via live RPC calls.
+> Of ~129 safe read methods, 122 confirmed working via live RPC.
+> Methods marked [tested] have been confirmed working.
 > Methods marked [write] modify router configuration.
+>
+> **Feature-gated methods** (return Method not found without specific hardware/packages):
+> - `logread.get_config` — Method not found
+> - `modem.get_apn_poll_enabled` — requires cellular modem
+> - `bark.get_config` / `bark.get_status` — requires Bark parental control package
+> - `mvas.get_connect_info` — requires multi-SIM hardware
+> - `plugins.get_package_info` — requires `{name: "package-name"}` parameter
+> - `mptun.get_token` — hangs/timeout (requires AstroWarp setup)
 
 ## system (9 methods)
 
