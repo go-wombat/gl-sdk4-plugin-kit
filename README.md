@@ -77,15 +77,15 @@ my-plugin/
 
 ## Writing Plugins
 
-Your plugin is a standard Vue 2 single-file component. GL.iNet provides 49 built-in components you can use — they're already registered globally:
+Your plugin is a standard Vue 2 single-file component. Add a `rpc()` helper for safe API calls:
 
 ```vue
 <template>
   <div>
     <gl-title :title="'My Plugin'" />
     <gl-card>
-      <p>{{ info }}</p>
-      <gl-btn type="primary" @click="refresh">Refresh</gl-btn>
+      <p>{{ model }} — {{ uptime }}</p>
+      <gl-btn type="primary" @click="fetchData">Refresh</gl-btn>
     </gl-card>
   </div>
 </template>
@@ -94,48 +94,77 @@ Your plugin is a standard Vue 2 single-file component. GL.iNet provides 49 built
 export default {
   name: 'my-plugin',
   data() {
-    return { info: 'Loading...' };
+    return { model: '', uptime: '' };
   },
   created() {
-    this.refresh();
+    this.fetchData();
   },
   methods: {
-    refresh() {
-      this.$rpcRequest('call', ['sid', 'system', 'get_info', {}]).then(res => {
-        this.info = res.board_info.model;
-      });
+    rpc(module, func, params) {
+      return this.$rpcRequest('call', ['sid', module, func, params || {}])
+        .then(r => r).catch(() => null);
+    },
+    async fetchData() {
+      const info = await this.rpc('system', 'get_info');
+      const status = await this.rpc('system', 'get_status');
+      if (info) this.model = info.board_info.model;
+      if (status) {
+        const s = status.system.uptime;
+        this.uptime = Math.floor(s/3600) + 'h ' + Math.floor(s%3600/60) + 'm';
+      }
     },
   },
 };
 </script>
 
 <style scoped>
-/* Use GL.iNet theme variables */
 p { color: var(--text-color); }
 </style>
 ```
 
-## Safe RPC Mixin
+## Node.js API Client
 
-GL.iNet shows a global error popup when an RPC call fails. Include the safe RPC mixin
-to prevent this:
+Control your router from scripts without SSH:
 
 ```js
-// Copy safeRpcMixin into your component methods (no import needed in the bundle):
-methods: {
-  safeRpc(module, func, params) {
-    return this.$rpcRequest('call', ['sid', module, func, params || {}])
-      .then(function (res) { return res; })
-      .catch(function () { return null; });
-  }
-}
+const { createClient } = require('gl-sdk4-plugin-kit/lib/api-client');
 
-// Then use safeRpc instead of $rpcRequest:
-const info = await this.safeRpc('system', 'get_info');
-if (info) { /* success */ }
+const client = await createClient('192.168.8.1', 'your-password');
+
+// Read
+const info = await client.system.getInfo();
+const clients = await client.clients.getList();
+const vpn = await client.vpnClient.getStatus();
+
+// Write
+await client.wifi.setConfig({ ... });
+await client.firewall.addPortForward({ name: 'SSH', proto: 'tcp', dest_ip: '192.168.8.100', dest_port: '22', src_dport: '2222' });
+
+// VPN control (use set_tunnel, not stop)
+const tunnels = await client.vpnClient.getTunnel();
+tunnels.tunnels[0].enabled = false;
+await client.rpc('vpn-client', 'set_tunnel', tunnels.tunnels[0]); // disable
+tunnels.tunnels[0].enabled = true;
+await client.rpc('vpn-client', 'set_tunnel', tunnels.tunnels[0]); // re-enable
 ```
 
-See [lib/safe-rpc-mixin.js](lib/safe-rpc-mixin.js) for the full mixin with `safeRpcOr` and `safeRpcBatch`.
+## Vue API Mixin
+
+For advanced plugins, use the typed API mixin ([lib/api.js](lib/api.js)) with 44 namespaces
+covering all 302 methods:
+
+```js
+const { glApiMixin } = require('gl-sdk4-plugin-kit/lib/api');
+
+export default {
+  mixins: [glApiMixin],
+  async created() {
+    const info = await this.glApi.system.getInfo();
+    const clients = await this.glApi.clients.getList();
+    await this.glApi.firewall.addPortForward({ ... });
+  }
+};
+```
 
 ## Documentation
 
@@ -145,12 +174,20 @@ See [lib/safe-rpc-mixin.js](lib/safe-rpc-mixin.js) for the full mixin with `safe
 - [Theme Variables](docs/theme.md) — CSS variables for native look and feel
 - [Complete API Methods](docs/api-methods.md) — All 302 RPC methods across 40+ modules
 - [Type Definitions](lib/types.js) — JSDoc types for all API responses (IDE autocomplete)
+- [Write Methods — VPN](docs/write-methods-vpn.md) — 38 VPN write method parameters
+- [Write Methods — Network](docs/write-methods-network.md) — 34 network/firewall write method parameters
+- [Write Methods — System](docs/write-methods-system.md) — 42 system/service write method parameters
+- [Vue API Mixin](lib/api.js) — Typed API with 44 namespaces for Vue plugins
+- [Node.js Client](lib/api-client.js) — Standalone API client with auth
 
 ## Examples
 
 - [hello-world](examples/hello-world/) — Minimal plugin showing device info
 - [network-info](examples/network-info/) — Plugin with tables and multiple cards
-- [vpn-status](examples/vpn-status/) — VPN dashboard with gl-switch, gl-table, gl-tips, and RPC toggle
+- [vpn-status](examples/vpn-status/) — VPN dashboard with service status
+- [wifi-scanner](examples/wifi-scanner/) — Scan nearby Wi-Fi networks
+- [client-monitor](examples/client-monitor/) — Connected devices with traffic stats
+- [firewall-viewer](examples/firewall-viewer/) — Port forwards, rules, WAN access
 
 ## Extract Components from Any Firmware
 

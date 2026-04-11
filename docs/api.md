@@ -400,8 +400,61 @@ try {
 
 ---
 
+## VPN Control
+
+**Important:** `vpn-client.stop` does NOT work (returns "parameter missing").
+Use `vpn-client.set_tunnel` with `enabled: false/true` to control VPN:
+
+```js
+// Get current tunnels
+const tunnels = await this.rpc('vpn-client', 'get_tunnel');
+const tunnel = tunnels.tunnels[0];
+
+// Disable VPN
+tunnel.enabled = false;
+await this.rpc('vpn-client', 'set_tunnel', tunnel);
+
+// Re-enable VPN
+tunnel.enabled = true;
+await this.rpc('vpn-client', 'set_tunnel', tunnel);
+
+// Check status
+const status = await this.rpc('vpn-client', 'get_status');
+// status.status_list[0].status: 1 = connected, 0 = disconnected
+// status.status_list[0].enabled: true/false
+```
+
+---
+
+## Node.js API Client
+
+For scripts and CLI tools, use `lib/api-client.js`:
+
+```js
+const { createClient } = require('gl-sdk4-plugin-kit/lib/api-client');
+
+const client = await createClient('192.168.8.1', 'password');
+
+// All 302 methods available via namespaced API
+const info = await client.system.getInfo();
+const clients = await client.clients.getList();
+const vpn = await client.vpnClient.getStatus();
+await client.firewall.addPortForward({ name: 'SSH', ... });
+
+// Raw RPC for edge cases
+const result = await client.rpc('custom-module', 'custom_method', { key: 'value' });
+```
+
+Authentication uses GL.iNet's challenge-response protocol
+(MD5 crypt + SHA256, documented in the Authentication section above).
+
+---
+
 ## Notes
 
 - API namespaces and methods were discovered by reverse engineering firmware 4.8.1.
-- Use `glplugin extract root@<router-ip>` to discover API calls used in any firmware.
+- Use `glplugin extract --rpc <router-ip>` to discover API calls on any firmware.
 - Some methods require specific packages to be installed on the router.
+- VPN modules use hyphenated names: `vpn-client`, `wg-client`, `wg-server`, `ovpn-client`, `ovpn-server`
+- Standard OpenWrt ubus methods (`system.board`, `system.info`) are NOT available via GL.iNet RPC.
+- Wi-Fi passwords are returned in plain text by `system.get_status` and `wifi.get_config`.
