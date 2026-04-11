@@ -108,6 +108,7 @@ p { color: var(--text-color); }
 
 - [hello-world](examples/hello-world/) — Minimal plugin showing device info
 - [network-info](examples/network-info/) — Plugin with tables and multiple cards
+- [vpn-status](examples/vpn-status/) — VPN dashboard with gl-switch, gl-table, gl-tips, and RPC toggle
 
 ## Extract Components from Any Firmware
 

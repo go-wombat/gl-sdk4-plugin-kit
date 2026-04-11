@@ -1,0 +1,10 @@
+{
+  "index": 87,
+  "view": "vpnstatus",
+  "title": "VPN Status",
+  "icon": "setting",
+  "level": 2,
+  "parent": "vpn",
+  "parent_icon": "vpn-dashboard",
+  "parent_index": 40
+}

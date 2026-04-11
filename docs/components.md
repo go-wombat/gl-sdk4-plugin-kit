@@ -431,10 +431,98 @@ Responsive helper component. Renders its slot content only on desktop-width view
 
 ---
 
+## Internal / Wrapper Components
+
+The following components are used internally by the components above. You generally
+do not use them directly, but they are globally registered and available if needed.
+
+| Component | Purpose |
+|-----------|---------|
+| `gl-alert-wrapper` | Internal wrapper for gl-alert positioning and animations |
+| `gl-battery-icon-wrapper` | SVG wrapper for gl-battery icon rendering |
+| `gl-button` | Alias / internal variant of gl-btn |
+| `gl-card-wrapper` | Internal wrapper handling gl-card layout and borders |
+| `gl-chexbox-item` | Individual checkbox item (note: typo in original, use as-is) |
+| `gl-collapse-wrapper` | Internal wrapper for gl-collapse-group animations |
+| `gl-drawer-wrapper` | Internal wrapper for gl-drawer overlay and transitions |
+| `gl-dropdown-label-wrapper` | Label area wrapper inside gl-dropdown |
+| `gl-message` | Base message component (gl-message-fade extends this) |
+| `gl-message--` | Internal CSS class variant (not a usable component) |
+| `gl-percent-circle-wrapper` | SVG wrapper for gl-percent-circle rendering |
+| `gl-pwd-strength` | Alias for gl-pwd-strong |
+| `gl-radio-group-wrapper` | Internal wrapper for radio button group layout |
+| `gl-radio-wrapper` | Individual radio button wrapper |
+| `gl-wifi-list` | Wi-Fi network list (used in repeater/internet pages) |
+
+### gl-wifi-list
+
+Displays a list of available Wi-Fi networks for selection. Used internally by the
+Internet and Repeater configuration pages.
+
+```vue
+<gl-wifi-list :list="wifiNetworks" @selectedAp="onSelectNetwork" />
+```
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `selectedAp` | Object | Emitted when user selects a network |
+| `reScan` | -- | Emitted when user requests a rescan |
+
+---
+
+## Known Events
+
+Events emitted across all components (discovered via reverse engineering):
+
+**User Interaction:** `click`, `change`, `input`, `blur`, `focus`, `clear`, `close`, `open`
+
+**Table:** `selection-change`, `sort-change`, `filter-change`, `cell-mouse-enter`, `cell-mouse-leave`
+
+**Pagination:** `current-change`, `size-change`, `prev-click`, `next-click`
+
+**Dialog/Drawer:** `opened`, `closed`
+
+**Form:** `validate`, `upload`, `uploadError`
+
+**Custom:** `reScan`, `selectedAp`, `showConfig`, `showAutoProtalTips`
+
+---
+
+## Complete Component List
+
+All 49 `gl-*` identifiers found in firmware 4.8.1:
+
+```
+gl-alert              gl-dropdown           gl-percent-circle
+gl-alert-wrapper      gl-dropdown-item      gl-percent-circle-wrapper
+gl-battery            gl-dropdown-label-    gl-private
+gl-battery-icon-        wrapper             gl-pwd-strength
+  wrapper             gl-ellipsis-tooltip   gl-pwd-strong
+gl-btn                gl-guide-icon         gl-qrcode
+gl-button             gl-iconfont           gl-radio-group-wrapper
+gl-card               gl-is-desktop         gl-radio-wrapper
+gl-card-wrapper       gl-line-chart         gl-search-input
+gl-cascader           gl-link               gl-switch
+gl-checkbox-list      gl-message            gl-table
+gl-chexbox-item       gl-message--          gl-table-column
+gl-collapse-group     gl-message-fade       gl-time-pick
+gl-collapse-wrapper   gl-tips               gl-title
+gl-drawer             gl-toggle             gl-upload-card
+gl-drawer-wrapper     gl-toggle-item        gl-week-select
+                      gl-toggle-wrapper     gl-wifi-list
+                                            gl-wireless-signal
+```
+
+---
+
 ## Notes
 
 - All components use the `gl-` prefix and are globally registered in the admin panel Vue instance.
 - Theme CSS variables are inherited automatically; you do not need to pass colors as props.
-- This reference was produced by reverse engineering compiled bundles. Many components likely
-  support additional props, slots, and events beyond what is listed here. When in doubt, inspect
-  the component in the browser DevTools or refer to the bundled source.
+- This reference was produced by reverse engineering compiled bundles from GL-MT3000
+  firmware 4.8.1. Many components likely support additional props, slots, and events
+  beyond what is listed here.
+- Use `glplugin extract root@<router-ip>` to regenerate the component list from any
+  firmware version.
+- When in doubt, inspect the component in the browser DevTools (Vue Devtools extension
+  recommended) or refer to the bundled source.
