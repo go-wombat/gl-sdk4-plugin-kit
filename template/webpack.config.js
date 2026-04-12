@@ -11,6 +11,7 @@ module.exports = {
     path: path.resolve(__dirname, 'dist'),
     filename: `gl-sdk4-ui-${pluginName}.common.js`,
     libraryTarget: 'commonjs2',
+    libraryExport: 'default',
   },
   externals: {
     vue: 'vue',

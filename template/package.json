@@ -4,7 +4,7 @@
   "private": true,
   "pluginName": "example",
   "scripts": {
-    "build": "webpack --config webpack.config.js && gzip -kf dist/*.js",
+    "build": "glplugin build",
     "deploy": "node ../lib/deploy.js"
   },
   "devDependencies": {
