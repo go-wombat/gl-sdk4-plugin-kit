@@ -77,9 +77,11 @@ Accordion component for collapsible content sections.
 
 ## Buttons and Controls
 
-### gl-btn
+### gl-button
 
 Standard button component.
+
+**Important:** The component is registered as `gl-button`, not `gl-btn`. Using `gl-btn` renders an unstyled custom element.
 
 | Prop | Type | Description |
 |------|------|-------------|
@@ -89,9 +91,9 @@ Standard button component.
 | `disabled` | Boolean | Disables the button |
 
 ```vue
-<gl-btn type="primary" :loading="saving" @click="handleSave">
+<gl-button type="primary" :loading="saving" @click="handleSave">
   Save Settings
-</gl-btn>
+</gl-button>
 ```
 
 ---
