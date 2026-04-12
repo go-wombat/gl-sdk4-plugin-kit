@@ -2,9 +2,7 @@
   <div>
     <gl-title title="Hello World" />
     <gl-card>
-      <gl-tips state="info">
-        This is a sample GL.iNet plugin built with the gl-sdk4-plugin-kit.
-      </gl-tips>
+      <gl-tips state="info" tips="This is a sample GL.iNet plugin built with the gl-sdk4-plugin-kit." />
 
       <div class="info-section">
         <h3 class="section-heading">Device Information</h3>

@@ -5,7 +5,7 @@
     <!-- WAN Access Card -->
     <gl-card>
       <h3 class="section-heading">WAN Access</h3>
-      <gl-tips v-if="wanError" state="warning">{{ wanError }}</gl-tips>
+      <gl-tips v-if="wanError" state="warning" :tips="wanError" />
       <div v-if="wanAccess" class="wan-grid">
         <div class="wan-item">
           <span class="wan-label">Ping</span>
@@ -31,7 +31,7 @@
     <!-- Port Forwards Card -->
     <gl-card>
       <h3 class="section-heading">Port Forwards</h3>
-      <gl-tips v-if="forwardError" state="warning">{{ forwardError }}</gl-tips>
+      <gl-tips v-if="forwardError" state="warning" :tips="forwardError" />
       <gl-table v-if="portForwards.length" :data="portForwards">
         <gl-table-column prop="name" label="Name" min-width="120" />
         <gl-table-column prop="proto" label="Protocol" width="100" />
@@ -66,7 +66,7 @@
     <!-- Firewall Rules Card -->
     <gl-card>
       <h3 class="section-heading">Firewall Rules</h3>
-      <gl-tips v-if="ruleError" state="warning">{{ ruleError }}</gl-tips>
+      <gl-tips v-if="ruleError" state="warning" :tips="ruleError" />
       <gl-table v-if="rules.length" :data="rules">
         <gl-table-column prop="name" label="Name" min-width="140" />
         <gl-table-column prop="proto" label="Protocol" width="100" />

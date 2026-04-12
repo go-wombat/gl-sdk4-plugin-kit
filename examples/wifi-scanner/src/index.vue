@@ -11,7 +11,7 @@
         </span>
       </div>
 
-      <gl-tips v-if="error" state="warning">{{ error }}</gl-tips>
+      <gl-tips v-if="error" state="warning" :tips="error" />
 
       <gl-table v-if="sortedNetworks.length" :data="sortedNetworks">
         <gl-table-column prop="ssid" label="SSID" min-width="160">

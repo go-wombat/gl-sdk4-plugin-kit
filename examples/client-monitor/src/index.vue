@@ -18,7 +18,7 @@
         </label>
       </div>
 
-      <gl-tips v-if="error" state="warning">{{ error }}</gl-tips>
+      <gl-tips v-if="error" state="warning" :tips="error" />
 
       <gl-table v-if="filteredClients.length" :data="filteredClients">
         <gl-table-column label="Name" min-width="140">

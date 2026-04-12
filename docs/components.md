@@ -355,14 +355,20 @@ Alert banner for page-level messages.
 
 Inline info, warning, error, or success tip block.
 
+**Important:** Pass text via the `:tips` prop, not as slot content. Slot content renders an empty tip on the router.
+
 | Prop | Type | Description |
 |------|------|-------------|
+| `tips` | String | The message text to display |
 | `state` | String | One of `"info"`, `"warning"`, `"error"`, `"success"` |
 
 ```vue
-<gl-tips state="warning">
-  Changes require a reboot to take effect.
-</gl-tips>
+<!-- Static text -->
+<gl-tips state="warning" tips="Changes require a reboot to take effect." />
+
+<!-- Dynamic / i18n text -->
+<gl-tips v-if="error" state="warning" :tips="error" />
+<gl-tips state="info" :tips="$t('myplugin.some_hint')" />
 ```
 
 ---
