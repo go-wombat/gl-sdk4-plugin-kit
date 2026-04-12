@@ -1,47 +1,59 @@
 # GL.iNet Vue Components Reference
 
-> **Important:** These components were discovered via reverse engineering of the GL-MT3000 admin panel
-> (firmware SDK 4.x, Vue 2.x). Props, events, and slots listed here are those confirmed through
-> analysis but are likely incomplete. Most components accept additional undocumented props.
-> All components automatically inherit the active theme via CSS custom properties.
+> Extracted from GL-MT3000 firmware 4.8.1 by inspecting `Vue.options.components`
+> and the compiled app bundle. Props are confirmed via runtime introspection.
+> The admin panel is Vue 2.x with Element UI 2.x included.
 
 ---
 
-## Layout Components
+## How component names work
+
+Some components are registered in **kebab-case** (`gl-button`), others in **PascalCase** (`GlCheckbox`).
+In Vue 2 templates you can use either form — `<gl-checkbox>` resolves `GlCheckbox`.
+But if the component is only registered in kebab-case, using PascalCase won't work and vice versa.
+
+**Not available to plugins:** `gl-btn`, `gl-alert`, `gl-message-fade` — these exist in the
+app bundle but are registered **locally** inside built-in views, not globally. Plugins cannot use them.
+
+---
+
+## Layout
 
 ### gl-title
 
-Page title header displayed at the top of a view.
+Page title header.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `title` | String | The page heading text |
+| `title` | String | The heading text |
 
 ```vue
-<gl-title title="My Plugin Page" />
+<gl-title title="My Plugin" />
 ```
 
 ---
 
 ### gl-card
 
-Card container with optional footer. Uses the default slot for body content.
+Card container. The main layout building block.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `footer` | Boolean/String | Controls footer area display |
+| `title` | String | Optional card title |
+| `footer` | String | Footer text |
+| `badge` | String | Badge text |
+| `state` | String | Card state styling |
+| `footerClass` | String | CSS class for footer |
+| `iconClass` | String | CSS class for icon |
 
 | Slot | Description |
 |------|-------------|
-| default | Card body content |
-| footer | Footer area content (when footer prop is truthy) |
+| default | Card body |
+| footer | Footer area |
 
 ```vue
 <gl-card>
-  <p>Card body content goes here.</p>
-  <template #footer>
-    <gl-btn type="primary">Save</gl-btn>
-  </template>
+  <p>Card body content.</p>
 </gl-card>
 ```
 
@@ -49,28 +61,28 @@ Card container with optional footer. Uses the default slot for body content.
 
 ### gl-drawer
 
-Side panel or modal overlay for secondary content, settings, or detail views.
+Side panel overlay for detail views and settings.
 
-| Prop | Type | Description |
-|------|------|-------------|
-| (undocumented) | -- | Visibility and size props expected but not confirmed |
+No confirmed props — controlled via `v-if` or `v-show` binding.
 
 ```vue
-<gl-drawer>
-  <p>Drawer content here.</p>
+<gl-drawer v-if="showDrawer">
+  <p>Drawer content.</p>
 </gl-drawer>
 ```
 
 ---
 
-### gl-collapse-group
+### GlCollapse / GlCollapseGroup
 
-Accordion component for collapsible content sections.
+Accordion for collapsible sections. Registered as PascalCase.
 
 ```vue
-<gl-collapse-group>
-  <!-- Collapse items go here -->
-</gl-collapse-group>
+<GlCollapseGroup>
+  <GlCollapse title="Section One">
+    <p>Content here.</p>
+  </GlCollapse>
+</GlCollapseGroup>
 ```
 
 ---
@@ -79,19 +91,20 @@ Accordion component for collapsible content sections.
 
 ### gl-button
 
-Standard button component.
-
-**Important:** The component is registered as `gl-button`, not `gl-btn`. Using `gl-btn` renders an unstyled custom element.
+Standard button. **Not `gl-btn`** — that is a local component unavailable to plugins.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `type` | String | Visual style: `"primary"`, `"default"`, `"danger"`, etc. |
-| `size` | String | Button size: `"small"`, `"medium"`, `"large"` |
-| `loading` | Boolean | Shows a loading spinner and disables interaction |
+| `type` | String | `"primary"`, `"default"`, `"danger"` |
+| `cssClass` | String | Additional CSS class |
+| `loading` | Boolean | Shows spinner, disables click |
 | `disabled` | Boolean | Disables the button |
+| `plain` | Boolean | Outlined/plain style |
+| `round` | String | Rounded corners |
+| `textTransform` | String | CSS text-transform value |
 
 ```vue
-<gl-button type="primary" :loading="saving" @click="handleSave">
+<gl-button type="primary" :loading="saving" @click="save">
   Save Settings
 </gl-button>
 ```
@@ -100,72 +113,132 @@ Standard button component.
 
 ### gl-switch
 
-Toggle switch for boolean settings.
+Toggle switch for boolean values.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `value` | Boolean | Current toggle state (use with v-model) |
+| `value` | Boolean | Current state (v-model) |
 | `disabled` | Boolean | Disables the switch |
-
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `change` | Boolean | Emitted when toggle state changes |
+| `activeColor` | String | Color when on |
+| `inactiveColor` | String | Color when off |
+| `width` | Number | Width in px |
 
 ```vue
-<gl-switch v-model="enabled" @change="onToggle" />
+<gl-switch v-model="enabled" />
 ```
 
 ---
 
-### gl-toggle / gl-toggle-item
+### GlToggle / GlToggleItem
 
-Tab-style switcher for choosing between multiple options.
+Tab-style switcher. Registered as PascalCase.
 
 ```vue
-<gl-toggle v-model="activeTab">
-  <gl-toggle-item value="tab1">Tab One</gl-toggle-item>
-  <gl-toggle-item value="tab2">Tab Two</gl-toggle-item>
-</gl-toggle>
+<GlToggle v-model="activeTab">
+  <GlToggleItem value="tab1">Tab One</GlToggleItem>
+  <GlToggleItem value="tab2">Tab Two</GlToggleItem>
+</GlToggle>
 ```
 
 ---
 
 ### gl-link
 
-Styled anchor/link component.
+Styled anchor.
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `href` | String | Link URL |
+| `type` | String | Link style |
 
 ```vue
-<gl-link href="https://www.gl-inet.com">GL.iNet Website</gl-link>
+<gl-link href="https://www.gl-inet.com">GL.iNet</gl-link>
 ```
 
 ---
 
-### gl-dropdown / gl-dropdown-item
+### GlDropdown / GlDropdownItem
 
-Dropdown menu for actions or selections.
+Dropdown menu. Registered as PascalCase.
 
 ```vue
-<gl-dropdown>
-  <gl-dropdown-item @click="doAction1">Action One</gl-dropdown-item>
-  <gl-dropdown-item @click="doAction2">Action Two</gl-dropdown-item>
-</gl-dropdown>
+<GlDropdown>
+  <GlDropdownItem @click="action1">Action One</GlDropdownItem>
+  <GlDropdownItem @click="action2">Action Two</GlDropdownItem>
+</GlDropdown>
 ```
 
 ---
 
 ## Form Inputs
 
-### gl-private
+### el-input
 
-Password input field with show/hide toggle.
+Text input. This is an **Element UI** component bundled with the admin panel.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `value` | String | Input value (use with v-model) |
+| `value` | String/Number | Input value (v-model) |
+| `type` | String | `"text"`, `"textarea"`, `"password"`, `"number"` |
+| `placeholder` | String | Placeholder text |
+| `disabled` | Boolean | Disabled state |
+| `clearable` | Boolean | Show clear button |
+| `showPassword` | Boolean | Toggle password visibility |
+| `size` | String | `"large"`, `"small"`, `"mini"` |
+| `prefixIcon` | String | Icon class for prefix |
+| `suffixIcon` | String | Icon class for suffix |
+| `readonly` | Boolean | Read-only state |
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `input` | String | Emitted on value change |
+```vue
+<el-input v-model="name" placeholder="Enter name" clearable />
+```
+
+---
+
+### el-select
+
+Dropdown select. Element UI component.
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `value` | any | Selected value (v-model) |
+| `placeholder` | String | Placeholder text |
+| `disabled` | Boolean | Disabled state |
+| `clearable` | Boolean | Allow clearing |
+| `filterable` | Boolean | Allow typing to filter |
+
+Use with `ElOption`:
+
+```vue
+<el-select v-model="selected" placeholder="Choose...">
+  <ElOption label="Option A" value="a" />
+  <ElOption label="Option B" value="b" />
+</el-select>
+```
+
+---
+
+### el-form-item
+
+Form field wrapper with label and validation. Element UI component.
+
+```vue
+<ElForm :model="form" label-width="120px">
+  <el-form-item label="Username" prop="username">
+    <el-input v-model="form.username" />
+  </el-form-item>
+</ElForm>
+```
+
+---
+
+### gl-private
+
+Password input with show/hide toggle.
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `value` | String | Password value (v-model) |
 
 ```vue
 <gl-private v-model="password" />
@@ -175,17 +248,21 @@ Password input field with show/hide toggle.
 
 ### gl-search-input
 
-Search field with built-in icon and clear button.
+Search input with icon and clear button.
 
 ```vue
-<gl-search-input v-model="searchQuery" />
+<gl-search-input v-model="query" />
 ```
 
 ---
 
 ### gl-cascader
 
-Cascading/hierarchical selector for multi-level choices.
+Cascading/hierarchical selector.
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `openDelay` | Number | Delay before opening (ms) |
 
 ```vue
 <gl-cascader :options="cascadeOptions" v-model="selected" />
@@ -193,25 +270,28 @@ Cascading/hierarchical selector for multi-level choices.
 
 ---
 
-### gl-checkbox-list / gl-checkbox-item
+### GlCheckbox / GlCheckboxGroup
 
-Checkbox group for multi-select options.
+Checkbox and checkbox group. Registered as PascalCase.
 
 ```vue
-<gl-checkbox-list v-model="selectedItems">
-  <gl-checkbox-item value="a">Option A</gl-checkbox-item>
-  <gl-checkbox-item value="b">Option B</gl-checkbox-item>
-</gl-checkbox-list>
+<GlCheckboxGroup v-model="selectedItems">
+  <GlCheckbox label="a">Option A</GlCheckbox>
+  <GlCheckbox label="b">Option B</GlCheckbox>
+</GlCheckboxGroup>
 ```
 
 ---
 
-### gl-radio-wrapper
+### GlRadio / GlRadioGroup
 
-Radio button group for single-select options.
+Radio button and radio group. Registered as PascalCase.
 
 ```vue
-<gl-radio-wrapper v-model="choice" :options="radioOptions" />
+<GlRadioGroup v-model="choice">
+  <GlRadio label="opt1">Option 1</GlRadio>
+  <GlRadio label="opt2">Option 2</GlRadio>
+</GlRadioGroup>
 ```
 
 ---
@@ -228,7 +308,7 @@ Time picker input.
 
 ### gl-week-select
 
-Week/day selector, typically used for scheduling features.
+Day-of-week selector for scheduling.
 
 ```vue
 <gl-week-select v-model="selectedDays" />
@@ -238,10 +318,10 @@ Week/day selector, typically used for scheduling features.
 
 ### gl-upload-card
 
-File upload component with drag-and-drop or click-to-browse.
+File upload with drag-and-drop.
 
 ```vue
-<gl-upload-card @change="handleFileUpload" />
+<gl-upload-card @change="handleFile" />
 ```
 
 ---
@@ -250,16 +330,31 @@ File upload component with drag-and-drop or click-to-browse.
 
 ### gl-table / gl-table-column
 
-Data table with column definitions and optional sorting.
+Data table. Props extracted from runtime:
 
-| gl-table-column Props | Type | Description |
-|-----------------------|------|-------------|
-| `prop` | String | Key in row data object |
-| `label` | String | Column header text |
-| `sortable` | Boolean | Enable sorting for this column |
+**gl-table:**
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `data` | Array | Row data |
+| `border` | Boolean | Show borders |
+| `stripe` | Boolean | Striped rows |
+| `height` | String/Number | Fixed height |
+| `emptyText` | String | Text when empty |
+
+**gl-table-column:**
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `prop` | String | Key in row data |
+| `label` | String | Column header |
+| `width` | String/Number | Fixed width |
+| `minWidth` | String/Number | Minimum width |
+| `sortable` | Boolean/String | Enable sorting |
+| `formatter` | Function | Cell value formatter |
 
 ```vue
-<gl-table :data="tableData">
+<gl-table :data="rows">
   <gl-table-column prop="name" label="Name" sortable />
   <gl-table-column prop="value" label="Value" />
 </gl-table>
@@ -269,11 +364,11 @@ Data table with column definitions and optional sorting.
 
 ### gl-percent-circle
 
-Circular progress/percentage indicator.
+Circular percentage indicator.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `percent` | Number | Percentage value (0-100) |
+| `percent` | Number | Value 0-100 |
 
 ```vue
 <gl-percent-circle :percent="75" />
@@ -283,7 +378,7 @@ Circular progress/percentage indicator.
 
 ### gl-line-chart
 
-Line chart for time-series or trend data.
+Line chart for trends.
 
 ```vue
 <gl-line-chart :data="chartData" />
@@ -293,11 +388,13 @@ Line chart for time-series or trend data.
 
 ### gl-battery
 
-Battery level indicator icon.
+Battery level icon.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `size` | Number/String | Display size of the battery icon |
+| `size` | Number | Icon size |
+| `vertical` | Boolean | Vertical orientation |
+| `theme` | String | Color theme |
 
 ```vue
 <gl-battery :size="24" />
@@ -317,7 +414,7 @@ Wi-Fi signal strength icon.
 
 ### gl-qrcode
 
-QR code generator component.
+QR code generator.
 
 ```vue
 <gl-qrcode :value="qrData" />
@@ -327,15 +424,15 @@ QR code generator component.
 
 ### gl-ellipsis-tooltip
 
-Truncates overflowing text and shows a tooltip on hover with the full content.
+Truncates text with hover tooltip.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `placement` | String | Tooltip position: `"top"`, `"bottom"`, `"left"`, `"right"` |
+| `placement` | String | `"top"`, `"bottom"`, `"left"`, `"right"` |
 
 ```vue
 <gl-ellipsis-tooltip placement="top">
-  This is a very long string that will be truncated...
+  Very long text that gets truncated...
 </gl-ellipsis-tooltip>
 ```
 
@@ -343,71 +440,67 @@ Truncates overflowing text and shows a tooltip on hover with the full content.
 
 ## Feedback
 
-### gl-alert
-
-Alert banner for page-level messages.
-
-```vue
-<gl-alert type="warning">Firmware update available.</gl-alert>
-```
-
----
-
 ### gl-tips
 
-Inline info, warning, error, or success tip block.
+Inline tip block.
 
-**Important:** Pass text via the `:tips` prop, not as slot content. Slot content renders an empty tip on the router.
+**Important:** Pass text via the `:tips` prop, not slot content. Slot content renders empty.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `tips` | String | The message text to display |
-| `state` | String | One of `"info"`, `"warning"`, `"error"`, `"success"` |
+| `tips` | String | The message text |
+| `state` | String | `"info"`, `"warning"`, `"error"`, `"success"` |
+| `sign` | String | Icon style (`"none"` to hide) |
+| `iconClass` | String | Custom icon class |
 
 ```vue
-<!-- Static text -->
-<gl-tips state="warning" tips="Changes require a reboot to take effect." />
-
-<!-- Dynamic / i18n text -->
-<gl-tips v-if="error" state="warning" :tips="error" />
-<gl-tips state="info" :tips="$t('myplugin.some_hint')" />
-```
-
----
-
-### gl-message / gl-message-fade
-
-Toast notification that appears temporarily.
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `type` | String | Message type: `"success"`, `"error"`, `"warning"`, `"info"` |
-
-Typically called programmatically:
-
-```js
-this.$message({ type: 'success', message: 'Settings saved.' });
+<gl-tips state="warning" tips="Changes require a reboot." />
+<gl-tips v-if="error" state="error" :tips="error" />
 ```
 
 ---
 
 ### gl-guide-icon
 
-Small help/question-mark icon that shows a tooltip on hover.
+Help icon with tooltip on hover.
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `content` | String | Tooltip text |
 
 ```vue
-<gl-guide-icon content="This setting controls the DNS server." />
+<gl-guide-icon content="This controls the DNS server." />
 ```
 
 ---
 
-### gl-pwd-strength / gl-pwd-strong
+### $message (programmatic)
 
-Password strength indicator bar.
+Toast notification. Not a component — called via `this.$message()`.
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `password` | String | The password string to evaluate |
+```js
+this.$message({ type: 'success', message: 'Settings saved.' });
+this.$message({ type: 'error', message: 'Operation failed.' });
+```
+
+---
+
+### $alert (programmatic)
+
+Alert dialog. Called via `this.$alert()`.
+
+```js
+this.$alert('Are you sure?', 'Confirm', {
+  confirmButtonText: 'OK',
+  callback: function(action) { /* ... */ }
+});
+```
+
+---
+
+### gl-pwd-strength
+
+Password strength indicator.
 
 ```vue
 <gl-pwd-strength :password="newPassword" />
@@ -415,122 +508,81 @@ Password strength indicator bar.
 
 ---
 
-## Utility
+## Element UI Components
 
-### gl-iconfont
+The admin panel bundles Element UI 2.x. These components are globally available:
 
-Icon component using the GL.iNet icon font.
+| Component | Tag | Purpose |
+|-----------|-----|---------|
+| ElDialog | `<ElDialog>` | Modal dialog |
+| ElForm | `<ElForm>` | Form wrapper with validation |
+| el-form-item | `<el-form-item>` | Form field wrapper |
+| el-input | `<el-input>` | Text/textarea/password input |
+| el-select | `<el-select>` | Dropdown select |
+| ElOption | `<ElOption>` | Select option |
+| ElTabs / ElTabPane | `<ElTabs>` | Tab panels |
+| ElTooltip | `<ElTooltip>` | Hover tooltip |
+| ElPopover | `<ElPopover>` | Click/hover popover |
+| ElSlider | `<ElSlider>` | Range slider |
+| ElPagination | `<ElPagination>` | Page navigation |
+| ElMenu / ElMenuItem | `<ElMenu>` | Navigation menu |
 
-```vue
-<gl-iconfont name="wifi" />
-```
-
----
-
-### gl-is-desktop
-
-Responsive helper component. Renders its slot content only on desktop-width viewports.
-
-```vue
-<gl-is-desktop>
-  <p>This content is only visible on desktop.</p>
-</gl-is-desktop>
-```
-
----
-
-## Internal / Wrapper Components
-
-The following components are used internally by the components above. You generally
-do not use them directly, but they are globally registered and available if needed.
-
-| Component | Purpose |
-|-----------|---------|
-| `gl-alert-wrapper` | Internal wrapper for gl-alert positioning and animations |
-| `gl-battery-icon-wrapper` | SVG wrapper for gl-battery icon rendering |
-| `gl-button` | Alias / internal variant of gl-btn |
-| `gl-card-wrapper` | Internal wrapper handling gl-card layout and borders |
-| `gl-chexbox-item` | Individual checkbox item (note: typo in original, use as-is) |
-| `gl-collapse-wrapper` | Internal wrapper for gl-collapse-group animations |
-| `gl-drawer-wrapper` | Internal wrapper for gl-drawer overlay and transitions |
-| `gl-dropdown-label-wrapper` | Label area wrapper inside gl-dropdown |
-| `gl-message` | Base message component (gl-message-fade extends this) |
-| `gl-message--` | Internal CSS class variant (not a usable component) |
-| `gl-percent-circle-wrapper` | SVG wrapper for gl-percent-circle rendering |
-| `gl-pwd-strength` | Alias for gl-pwd-strong |
-| `gl-radio-group-wrapper` | Internal wrapper for radio button group layout |
-| `gl-radio-wrapper` | Individual radio button wrapper |
-| `gl-wifi-list` | Wi-Fi network list (used in repeater/internet pages) |
-
-### gl-wifi-list
-
-Displays a list of available Wi-Fi networks for selection. Used internally by the
-Internet and Repeater configuration pages.
-
-```vue
-<gl-wifi-list :list="wifiNetworks" @selectedAp="onSelectNetwork" />
-```
-
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `selectedAp` | Object | Emitted when user selects a network |
-| `reScan` | -- | Emitted when user requests a rescan |
+See [Element UI 2.x docs](https://element.eleme.io/#/en-US/component/) for full API.
 
 ---
 
-## Known Events
+## Other GL.iNet Components
 
-Events emitted across all components (discovered via reverse engineering):
-
-**User Interaction:** `click`, `change`, `input`, `blur`, `focus`, `clear`, `close`, `open`
-
-**Table:** `selection-change`, `sort-change`, `filter-change`, `cell-mouse-enter`, `cell-mouse-leave`
-
-**Pagination:** `current-change`, `size-change`, `prev-click`, `next-click`
-
-**Dialog/Drawer:** `opened`, `closed`
-
-**Form:** `validate`, `upload`, `uploadError`
-
-**Custom:** `reScan`, `selectedAp`, `showConfig`, `showAutoProtalTips`
+| Component | Tag | Purpose |
+|-----------|-----|---------|
+| GlDraggableSort | `<GlDraggableSort>` | Drag-and-drop reordering |
+| GlScanWifi | `<GlScanWifi>` | Wi-Fi scanning trigger |
+| GlWifiList | `<GlWifiList>` | Wi-Fi network list for selection |
 
 ---
 
-## Complete Component List
+## Complete Globally Registered Component List
 
-All 49 `gl-*` identifiers found in firmware 4.8.1:
+Firmware 4.8.1, GL-MT3000. Extracted via `Object.keys(Vue.options.components)`:
 
+**GL.iNet (kebab-case):**
 ```
-gl-alert              gl-dropdown           gl-percent-circle
-gl-alert-wrapper      gl-dropdown-item      gl-percent-circle-wrapper
-gl-battery            gl-dropdown-label-    gl-private
-gl-battery-icon-        wrapper             gl-pwd-strength
-  wrapper             gl-ellipsis-tooltip   gl-pwd-strong
-gl-btn                gl-guide-icon         gl-qrcode
-gl-button             gl-iconfont           gl-radio-group-wrapper
-gl-card               gl-is-desktop         gl-radio-wrapper
-gl-card-wrapper       gl-line-chart         gl-search-input
-gl-cascader           gl-link               gl-switch
-gl-checkbox-list      gl-message            gl-table
-gl-chexbox-item       gl-message--          gl-table-column
-gl-collapse-group     gl-message-fade       gl-time-pick
-gl-collapse-wrapper   gl-tips               gl-title
-gl-drawer             gl-toggle             gl-upload-card
-gl-drawer-wrapper     gl-toggle-item        gl-week-select
-                      gl-toggle-wrapper     gl-wifi-list
-                                            gl-wireless-signal
+gl-battery          gl-ellipsis-tooltip  gl-private          gl-time-pick
+gl-button           gl-guide-icon        gl-pwd-strength     gl-tips
+gl-card             gl-line-chart        gl-qrcode           gl-title
+gl-cascader         gl-link              gl-search-input     gl-upload-card
+gl-drawer           gl-percent-circle    gl-switch           gl-week-select
+                                         gl-table            gl-wireless-signal
+                                         gl-table-column
+```
+
+**GL.iNet (PascalCase):**
+```
+GlCheckbox       GlCollapseGroup   GlDropdownItem    GlScanWifi
+GlCheckboxGroup  GlDraggableSort   GlRadio           GlToggle
+GlCollapse       GlDropdown        GlRadioGroup      GlToggleItem
+                                   GlWifiList
+```
+
+**Element UI:**
+```
+ElDialog         ElMenuItem        ElPagination      ElTabs
+ElForm           ElMenuItemGroup   ElPopover         ElTooltip
+ElMenu           ElOption          ElSlider
+el-form-item     el-input          el-select
+```
+
+**NOT globally registered (local only, unavailable to plugins):**
+```
+gl-btn           gl-alert          gl-message-fade
 ```
 
 ---
 
 ## Notes
 
-- All components use the `gl-` prefix and are globally registered in the admin panel Vue instance.
-- Theme CSS variables are inherited automatically; you do not need to pass colors as props.
-- This reference was produced by reverse engineering compiled bundles from GL-MT3000
-  firmware 4.8.1. Many components likely support additional props, slots, and events
-  beyond what is listed here.
-- Use `glplugin extract root@<router-ip>` to regenerate the component list from any
-  firmware version.
-- When in doubt, inspect the component in the browser DevTools (Vue Devtools extension
-  recommended) or refer to the bundled source.
+- Use CSS variables for theming: `--error-color`, `--warning-color`, `--success-color`,
+  `--title-color`, `--text-color`, `--hint-color`, `--card-bg`, `--table-border`, etc.
+- Props were extracted via `Vue.options.components[name].options.props` at runtime.
+- See `docs/theme.md` for the full list of CSS variables.
+- Use `glplugin extract root@<router-ip>` to re-extract from any firmware version.
