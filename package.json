@@ -17,7 +17,7 @@
     "prepack": "npm test"
   },
   "bin": {
-    "glplugin": "./bin/glplugin"
+    "glplugin": "bin/glplugin"
   },
   "files": [
     "bin/",
