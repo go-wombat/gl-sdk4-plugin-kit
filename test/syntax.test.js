@@ -41,6 +41,14 @@ test('all shipped JavaScript parses and runtime type definitions load', function
   schemaPatterns(schema, []).forEach((pattern) => assert.doesNotThrow(() => new RegExp(pattern)));
   run('sh', ['-n', path.join(root, 'template', 'profiles', 'full-stack', 'hooks', 'postinst')]);
   run('sh', ['-n', path.join(root, 'template', 'profiles', 'full-stack', 'hooks', 'prerm')]);
+
+  const compilerUtilsDir = path.dirname(
+    require.resolve('@vue/component-compiler-utils/package.json')
+  );
+  const compilerPostcss = require(
+    require.resolve('postcss/package.json', { paths: [compilerUtilsDir] })
+  );
+  assert.match(compilerPostcss.version, /^8\./);
 });
 
 test('CLI exposes its version and reports validation errors without a stack trace', function() {

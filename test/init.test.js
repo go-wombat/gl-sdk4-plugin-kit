@@ -27,6 +27,9 @@ test('init creates a manifest-based ui-only project from one template', function
   const menu = JSON.parse(fs.readFileSync(path.join(result.dir, 'menu.json'), 'utf8'));
   assert.equal(pkg.pluginName, undefined);
   assert.equal(pkg.glPlugin, undefined);
+  assert.deepEqual(pkg.overrides, {
+    '@vue/component-compiler-utils': { postcss: '^8.5.23' },
+  });
   assert.equal(manifest.id, 'foo-bar-plugin');
   assert.equal(manifest.profile, 'ui-only');
   assert.deepEqual(manifest.package, {

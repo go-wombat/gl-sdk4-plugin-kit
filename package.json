@@ -47,5 +47,10 @@
     "vue-template-compiler": "^2.7.16",
     "webpack": "^5.90.0",
     "webpack-cli": "^5.1.4"
+  },
+  "overrides": {
+    "@vue/component-compiler-utils": {
+      "postcss": "^8.5.23"
+    }
   }
 }

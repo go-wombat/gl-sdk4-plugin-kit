@@ -60,3 +60,4 @@ The 4.9 probes include `sqm.get_config` and `dpi.get_dpi_status`. Older firmware
 - The 4.9.0 flow has not yet been run against a live router.
 - HTTPS certificate validation requires a trusted router certificate. A self-signed certificate needs an explicit `--insecure` opt-out.
 - Local auth currently requires an `openssl` executable with `passwd -1`, `-5`, `-6`, and `-stdin` support.
+- SDK4 requires the Vue 2 template compiler. Its published XSS advisory has no Vue 2-compatible patched release; it remains a developer-side compiler dependency and plugin source/templates must be trusted. The vulnerable PostCSS 7 transitive dependency is overridden to patched PostCSS 8 and covered by the full build/package suite.
