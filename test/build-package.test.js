@@ -7,6 +7,7 @@ const test = require('node:test');
 const vm = require('vm');
 const build = require('../lib/build');
 const init = require('../lib/init');
+const { inspectPackage } = require('../lib/inspect');
 const packagePlugin = require('../lib/package');
 const { extractTarGz, makeTempDir, removeTempDir } = require('./helpers');
 
@@ -34,6 +35,17 @@ test('generated plugin builds and packages with the official SDK4 layout', funct
   assert.equal(packageResult.architecture, 'all');
   assert.equal(packageResult.profile, 'ui-only');
   assert.ok(fs.existsSync(packageResult.ipkFile));
+
+  const inspection = inspectPackage(packageResult.ipkFile);
+  assert.equal(inspection.ok, true);
+  assert.equal(inspection.metadata.Package, 'gl-sdk4-ui-package-fixture');
+  assert.equal(inspection.metadata.Architecture, 'all');
+  assert.deepEqual(inspection.summary.viewFiles, [
+    'www/views/gl-sdk4-ui-package-fixture.common.js.gz',
+  ]);
+  assert.deepEqual(inspection.summary.menuFiles, [
+    'usr/share/oui/menu.d/package-fixture.json',
+  ]);
 
   const outer = path.join(cwd, 'outer');
   const control = path.join(cwd, 'control');

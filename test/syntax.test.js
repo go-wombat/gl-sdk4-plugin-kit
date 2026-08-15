@@ -35,6 +35,10 @@ test('all shipped JavaScript parses and runtime type definitions load', function
     assert.equal(result.stderr, '');
   });
   assert.deepEqual(require('../lib/types'), {});
+  assert.doesNotMatch(
+    fs.readFileSync(path.join(root, 'lib', 'test.js'), 'utf8'),
+    /process\.exit\(/
+  );
   const schema = JSON.parse(
     fs.readFileSync(path.join(root, 'schema', 'gl-plugin.schema.json'), 'utf8')
   );
@@ -57,6 +61,9 @@ test('CLI exposes its version and reports validation errors without a stack trac
   const version = spawnSync(process.execPath, [cli, '--version'], { encoding: 'utf8' });
   assert.equal(version.status, 0);
   assert.equal(version.stdout.trim(), pkg.version);
+  const versionCommand = spawnSync(process.execPath, [cli, 'version'], { encoding: 'utf8' });
+  assert.equal(versionCommand.status, 0);
+  assert.equal(versionCommand.stdout.trim(), pkg.version);
 
   const invalid = spawnSync(process.execPath, [cli, 'init', '---'], { encoding: 'utf8' });
   assert.equal(invalid.status, 1);

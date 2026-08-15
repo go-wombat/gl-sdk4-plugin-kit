@@ -4,9 +4,13 @@
   "private": true,
   "description": "GL.iNet admin panel plugin: __PLUGIN_TITLE__",
   "scripts": {
+    "check": "glplugin check",
     "build": "glplugin build",
     "package": "glplugin package",
-    "deploy": "glplugin deploy"
+    "deploy": "glplugin deploy",
+    "dev": "glplugin dev",
+    "router:install": "glplugin install",
+    "router:uninstall": "glplugin uninstall"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",

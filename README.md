@@ -12,16 +12,14 @@ GL.iNet's admin panel loads plugins dynamically:
 2. **Views** are webpack-bundled Vue 2 components in `/www/views/gl-sdk4-ui-{name}.common.js.gz`
 3. The app fetches the JS bundle, runs `eval()`, and mounts the Vue component
 
-This toolkit automates the entire workflow: scaffold, build, and deploy.
+This toolkit automates the entire workflow: scaffold, validate, build, inspect,
+deploy, and install.
 
 ## Quick Start
 
 ```bash
-# Until the first npm release, install the CLI from this repository
-git clone https://github.com/go-wombat/gl-sdk4-plugin-kit.git
-cd gl-sdk4-plugin-kit
-npm install
-npm link
+# Install the CLI
+npm install --global gl-sdk4-plugin-kit
 
 # Create a UI-only plugin (default)
 glplugin init my-plugin
@@ -29,29 +27,32 @@ glplugin init my-plugin
 # Or create a package with router-side files and lifecycle hooks
 glplugin init my-router-tool --profile full-stack
 
-# Build it
+# Prepare it
 cd my-plugin
 npm install
-npm run build
 
-# Deploy to your router
-glplugin deploy root@192.168.8.1
+# Save a project-local router alias (no password is stored)
+glplugin target add beryl root@192.168.8.1 --use
+
+# Validate, build, package, upload, and install
+glplugin check
+glplugin install
 ```
 
 Open your router's admin panel and refresh — your plugin appears in the sidebar.
 
-### Create an installable .ipk package
+### Development loop
 
 ```bash
+glplugin deploy --build
+glplugin dev
+
+# Or inspect/install an existing package artifact
+glplugin build
 glplugin package
-# Output: dist/gl-sdk4-ui-my-plugin_1.0.0_all.ipk
-
-# Install on router (survives reboots):
-scp -O dist/*.ipk root@192.168.8.1:/tmp/
-ssh root@192.168.8.1 "opkg install /tmp/gl-sdk4-ui-my-plugin_1.0.0_all.ipk"
-
-# Uninstall:
-ssh root@192.168.8.1 "opkg remove gl-sdk4-ui-my-plugin"
+glplugin inspect dist/gl-sdk4-ui-my-plugin_1.0.0_all.ipk
+glplugin install --no-build
+glplugin uninstall
 ```
 
 ## CLI Commands
@@ -59,15 +60,25 @@ ssh root@192.168.8.1 "opkg remove gl-sdk4-ui-my-plugin"
 | Command | Description |
 |---------|-------------|
 | `glplugin init <name> [--profile ui-only\|full-stack]` | Scaffold a UI-only or full-stack plugin project |
+| `glplugin check [--strict]` | Validate project files, hooks, and toolchain |
 | `glplugin build` | Build plugin (webpack + gzip) |
 | `glplugin package` | Create `.ipk` package (installable via opkg, survives reboots) |
-| `glplugin deploy <host> [--insecure-host-key]` | Deploy UI assets to a router via SCP for development |
-| `glplugin test <host>` | Test plugin and API connectivity against live router |
-| `glplugin doctor <host>` | Detect model, firmware, auth algorithm, and read-only capabilities |
-| `glplugin extract <host> [--insecure-host-key]` | Extract components via SSH |
+| `glplugin inspect <package.ipk>` | Inspect package metadata and file layout safely |
+| `glplugin target <action>` | Add, select, list, show, or remove router aliases |
+| `glplugin deploy [target\|host] [--build]` | Optionally build and deploy UI assets via SCP |
+| `glplugin install [target\|host]` | Check, build, package, upload, and opkg install |
+| `glplugin uninstall [target\|host]` | Remove the project package from a router |
+| `glplugin dev [target\|host]` | Watch, rebuild, and deploy UI changes |
+| `glplugin test [target\|host]` | Test plugin and capability connectivity against a router |
+| `glplugin doctor [target\|host]` | Detect model, firmware, auth algorithm, and read-only capabilities |
+| `glplugin extract [target\|host] [--insecure-host-key]` | Extract firmware evidence via SSH |
 | `glplugin extract <ip> --rpc [--password-stdin] [--include-sensitive]` | Discover API endpoints via RPC (no SSH needed) |
 | `glplugin extract <host> --full` | Both SSH + RPC extraction |
-| `glplugin help` | Show help |
+| `glplugin <command> --help` | Show command help without executing it |
+
+All commands support `--cwd`; finite commands support `--json`, `--quiet`, and
+`--verbose`. See the [CLI workflow reference](docs/cli.md) for targets, precedence,
+machine output, and exit codes.
 
 ### Router authentication and doctor
 
@@ -91,10 +102,14 @@ glplugin doctor router.local --https --insecure # explicit opt-out for a self-si
 
 `doctor` calls only read methods. Missing optional modules are reported as unavailable or not supported; they do not make the core router check fail.
 
+`test` uses the same feature-gated capability catalog as `doctor`; it does not run a
+second hard-coded sweep of firmware methods or print any part of the session ID.
+
 SSH commands use argument arrays without a local shell. New host keys are accepted
 once and then checked on later connections. `--insecure-host-key` disables this
 verification explicitly; use it only for disposable development routers whose host
-key cannot be persisted.
+key cannot be persisted. Multi-step commands reuse one temporary OpenSSH connection;
+`dev` keeps it for the watcher lifetime, so rebuilds do not prompt again.
 
 ## Plugin Structure
 
@@ -163,7 +178,6 @@ p { color: var(--text-color); }
 Control your router from scripts without SSH:
 
 ```bash
-# After the npm release, install locally so lib/ imports resolve
 npm install gl-sdk4-plugin-kit
 ```
 
@@ -191,10 +205,9 @@ await client.rpc('vpn-client', 'set_tunnel', tunnels.tunnels[0]); // re-enable
 
 ## Vue API Mixin
 
-The toolkit can be installed or linked as a build-time dependency. Webpack includes
-the API factory and catalog in the plugin bundle, so the router does not need the
-Node package at runtime. Until the npm release, run `npm link gl-sdk4-plugin-kit`
-inside the generated plugin before importing it.
+Install the toolkit as a build-time dependency when importing its API mixin. Webpack
+includes the API factory and catalog in the plugin bundle, so the router does not
+need the Node package at runtime.
 
 For reference, the full mixin provides 49 namespaces with 326 methods. Calls preserve RPC rejections instead of converting failures to `null`:
 
@@ -249,7 +262,8 @@ contract and the firmware evidence behind hook dispatch.
 
 ## Documentation
 
-- [Components Reference](docs/components.md) — All 49 built-in `gl-*` Vue components
+- [Components Reference](docs/components.md) — 52 verified UI components on firmware 4.8.1 and the 4.9.0 beta6 delta
+- [CLI Workflow](docs/cli.md) - targets, check/build/install/dev workflows, JSON output, and exit codes
 - [API Reference](docs/api.md) — RPC calls and backend communication
 - [Firmware Compatibility](docs/compatibility.md) - inspected firmware artifacts, auth contract, and doctor behavior
 - [Package Manifest and Profiles](docs/packaging.md) - UI/full-stack packaging, overlays, conffiles, and lifecycle hooks
@@ -283,7 +297,12 @@ glplugin extract root@192.168.8.1
 glplugin extract 192.168.8.1 --rpc
 ```
 
-This SSHs into the router, downloads `app.js`, and extracts all component names, CSS variables, icons, and RPC methods into `extracted-components.json`.
+This SSHs into the router, downloads `app.js`, computes its SHA-256 fingerprint,
+and resolves its component registry against runtime-verified firmware catalogs. It
+also extracts CSS variables, icons, and RPC signatures into
+`extracted-components.json`. Unknown bundle fingerprints are reported as unknown;
+literal registration signals are diagnostic only and are never presented as a
+complete global component list.
 
 RPC extraction also records successful method response shapes. Fields that can hold
 passwords, tokens, or private keys are replaced with `<redacted>` by default. Use
@@ -303,7 +322,10 @@ This is an unofficial, community-driven project. It is not affiliated with, endo
 
 ## Contributing
 
-Contributions welcome! If you've tested on a different model or firmware version, please open a PR with a manually reviewed, redacted `extracted-components.json`.
+See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. A new component catalog must include the decompressed bundle
+SHA-256 and a runtime inspection of `Vue.options.components`. Do not infer the global
+registry from bundle strings. Submitted extraction output must be manually reviewed
+and redacted.
 
 ## License
 

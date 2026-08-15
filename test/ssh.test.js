@@ -99,11 +99,21 @@ test('deploy preflights inputs and uploads every asset through argument arrays',
   });
 
   assert.deepEqual(result, { target: 'root@router.local', uploaded: 3 });
-  assert.deepEqual(calls.map((call) => call.command), ['scp', 'scp', 'ssh', 'scp']);
+  assert.deepEqual(
+    calls.map((call) => call.command),
+    ['ssh', 'scp', 'scp', 'ssh', 'scp', 'ssh']
+  );
   calls.forEach((call) => {
     assert.equal(call.options.shell, false);
-    assert.equal(call.args.includes('StrictHostKeyChecking=accept-new'), true);
   });
+  assert.equal(calls[0].args.includes('ControlMaster=yes'), true);
+  assert.equal(calls[0].args.includes('StrictHostKeyChecking=accept-new'), true);
+  calls.slice(1, -1).forEach((call) => {
+    assert.equal(call.args.some((arg) => arg.startsWith('ControlPath=')), true);
+    assert.equal(call.args.includes('ControlMaster=no'), true);
+  });
+  assert.equal(calls.at(-1).args.includes('-O'), true);
+  assert.equal(calls.at(-1).args.includes('exit'), true);
 
   fs.writeFileSync(path.join(project.dir, 'i18n', 'bad;touch.json'), '{}\n');
   let unsafeCalls = 0;
@@ -130,6 +140,8 @@ test('SSH extraction analyzes a gzipped bundle and framed menu documents', funct
   const calls = [];
   const spawnSync = (command, args, options) => {
     calls.push({ args, command, options });
+    if (args.includes('ControlMaster=yes')) return successful();
+    if (args.includes('-O') && args.includes('exit')) return successful();
     const remoteCommand = args[args.length - 1];
     if (remoteCommand === extract.APP_BUNDLE_COMMAND) return successful(bundle);
     if (remoteCommand === extract.MENU_COMMAND) return successful(menus);
@@ -138,15 +150,79 @@ test('SSH extraction analyzes a gzipped bundle and framed menu documents', funct
   };
 
   const result = extract.extractViaSsh('router.local', { spawnSync });
-  assert.deepEqual(result.components, ['gl-button']);
+  assert.deepEqual(result.components, []);
+  assert.equal(result.componentRegistry.status, 'unknown');
+  assert.equal(result.componentRegistry.uiComponentCount, 0);
+  assert.deepEqual(result.literalComponentRegistrations, []);
   assert.deepEqual(result.cssVariables, ['--primary-color']);
   assert.deepEqual(result.icons, ['setting']);
   assert.deepEqual(result.rpcMethodsInCode, ['system.get_info']);
   assert.deepEqual(result.menus, [{ view: 'one' }, { view: 'two' }]);
   assert.equal(result.firmware, '4.8.1');
   assert.deepEqual(result.sshErrors, []);
-  assert.equal(calls.length, 3);
+  assert.equal(calls.length, 5);
+  assert.equal(calls[0].args.includes('ControlMaster=yes'), true);
+  assert.equal(calls.at(-1).args.includes('exit'), true);
   calls.forEach((call) => assert.equal(call.options.shell, false));
+});
+
+test('bundle analysis separates verified registry data from static string signals', function() {
+  const source = [
+    'Vue.component("gl-real",Component)',
+    '"gl-css-class"',
+    'var(--primary-color)',
+  ].join(';');
+  const sha256 = require('crypto').createHash('sha256').update(source).digest('hex');
+  const componentCatalogs = [{
+    id: 'synthetic-runtime-catalog',
+    model: 'TEST',
+    firmware: '1.0.0',
+    channel: 'test',
+    bundleSha256: sha256,
+    evidence: 'runtime-vue-options-components',
+    uiComponents: [{
+      registryKey: 'GlReal', tag: 'gl-real', origin: 'test', usage: 'standalone', requiresParent: null,
+    }],
+    routerComponents: [],
+  }];
+
+  const verified = extract.analyzeAdminBundle(source, { componentCatalogs });
+  assert.equal(verified.componentRegistry.status, 'verified');
+  assert.deepEqual(verified.components, ['gl-real']);
+  assert.deepEqual(verified.literalComponentRegistrations, ['gl-real']);
+
+  const unknown = extract.analyzeAdminBundle('"gl-css-class";Vue.use(Component)');
+  assert.equal(unknown.componentRegistry.status, 'unknown');
+  assert.deepEqual(unknown.components, []);
+  assert.deepEqual(unknown.literalComponentRegistrations, []);
+});
+
+test('official component catalogs contain exact runtime registry snapshots', function() {
+  const { CATALOGS, canonicalTag, findComponentCatalog } = require('../lib/component-catalog');
+  const release = findComponentCatalog(
+    '0409574b320a74de904a690df723134fc07471cddf5d622691ebbaa403116705'
+  );
+  const beta = findComponentCatalog(
+    'd85b8cf6573572bbe4ba096a8c6f7043c7c2cd1df5541933c6b83192f05240c7'
+  );
+
+  assert.equal(CATALOGS.length, 2);
+  assert.equal(release.uiComponents.length, 52);
+  assert.equal(release.routerComponents.length, 2);
+  assert.equal(beta.uiComponents.length, 57);
+  assert.equal(beta.routerComponents.length, 2);
+  assert.equal(canonicalTag('ElTabPane'), 'el-tab-pane');
+  assert.equal(canonicalTag('RouterView'), 'router-view');
+  assert.equal(
+    release.uiComponents.find((entry) => entry.registryKey === 'GlCheckbox').requiresParent,
+    'gl-checkbox-group'
+  );
+  assert.deepEqual(
+    beta.uiComponents
+      .map((entry) => entry.tag)
+      .filter((tag) => !release.uiComponents.some((entry) => entry.tag === tag)),
+    ['gl-agree-check', 'gl-number-input', 'gl-otp-input', 'gl-select-timezone', 'gl-steps']
+  );
 });
 
 test('RPC extraction does not print or persist credentials and redacts response secrets', async function(t) {
@@ -186,9 +262,47 @@ test('RPC extraction does not print or persist credentials and redacts response 
   assert.deepEqual(result.result.confirmedMethods, ['system.get_info']);
 });
 
+test('RPC extraction resolves a configured target and applies its transport defaults', async function(t) {
+  const cwd = makeTempDir('glplugin-extract-target-');
+  t.after(() => removeTempDir(cwd));
+  let loginCall;
+  const result = await extract(['--rpc'], {
+    call: async (host, sid, module, method, params, transport) => {
+      assert.equal(host, 'rpc.router.local');
+      assert.equal(sid, 'session');
+      assert.deepEqual(transport, { https: true, insecure: true });
+      return module === 'system' && method === 'get_info' ? { firmware_version: '4.9.0' } : null;
+    },
+    cwd,
+    log() {},
+    login: async (...args) => {
+      loginCall = args;
+      return { sid: 'session' };
+    },
+    readRouterPassword: async () => 'private-password',
+    resolveTarget() {
+      return {
+        ssh: 'root@router.local',
+        rpcHost: 'rpc.router.local',
+        username: 'admin',
+        https: true,
+        insecure: true,
+        insecureHostKey: false,
+      };
+    },
+  });
+  assert.equal(loginCall[0], 'rpc.router.local');
+  assert.equal(loginCall[2], 'admin');
+  assert.deepEqual(loginCall[3], { https: true, insecure: true });
+  assert.equal(result.result.firmware, '4.9.0');
+});
+
 test('deploy and extract parsers reject unknown flags and extra positionals', function() {
   assert.deepEqual(deploy.parseDeployArgs(['router.local', '--insecure-host-key']), {
-    host: 'router.local', insecureHostKey: true,
+    host: 'router.local', build: false, hostKeyPolicy: 'insecure',
+  });
+  assert.deepEqual(deploy.parseDeployArgs(['router.local', '--build', '--strict-host-key']), {
+    host: 'router.local', build: true, hostKeyPolicy: 'strict',
   });
   assert.throws(() => deploy.parseDeployArgs(['router.local', '--port', '22']), /Unknown/);
   assert.equal(extract.parseExtractArgs(['router.local', '--full']).sshMode, true);

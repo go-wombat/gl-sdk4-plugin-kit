@@ -1,19 +1,28 @@
 # GL.iNet Vue Components Reference
 
 > Extracted from GL-MT3000 firmware 4.8.1 by inspecting `Vue.options.components`
-> and the compiled app bundle. Props are confirmed via runtime introspection.
+> in the running official admin UI. The verified registry contains 52 UI
+> components plus the `RouterLink` and `RouterView` helpers.
 > The admin panel is Vue 2.x with Element UI 2.x included.
 
 ---
 
 ## How component names work
 
-Some components are registered in **kebab-case** (`gl-button`), others in **PascalCase** (`GlCheckbox`).
-In Vue 2 templates you can use either form — `<gl-checkbox>` resolves `GlCheckbox`.
-But if the component is only registered in kebab-case, using PascalCase won't work and vice versa.
+Some registry keys use **kebab-case** (`gl-button`) and others use **PascalCase**
+(`GlCheckbox`). Use the canonical kebab-case tag in plugin templates. Vue 2 resolves
+`<gl-checkbox>` to the `GlCheckbox` registry key, and kebab-case also works in DOM
+templates where HTML lowercases element names.
 
 **Not available to plugins:** `gl-btn`, `gl-alert`, `gl-message-fade` — these exist in the
-app bundle but are registered **locally** inside built-in views, not globally. Plugins cannot use them.
+app bundle but are not in the global registry. A string or CSS class in the bundle is
+not component availability evidence.
+
+Global availability also does not mean that every component is standalone. Child
+components such as `gl-checkbox`, `gl-collapse`, `gl-dropdown-item`, `gl-radio`,
+`gl-toggle-item`, `gl-table-column`, `el-menu-item`, `el-option`, and `el-tab-pane`
+depend on their corresponding parent component. Router-specific components can also
+depend on the Vuex store, RPC globals, or hardware state.
 
 ---
 
@@ -526,6 +535,7 @@ The admin panel bundles Element UI 2.x. These components are globally available:
 | ElSlider | `<ElSlider>` | Range slider |
 | ElPagination | `<ElPagination>` | Page navigation |
 | ElMenu / ElMenuItem | `<ElMenu>` | Navigation menu |
+| ElSubmenu | `<ElSubmenu>` | Nested menu item |
 
 See [Element UI 2.x docs](https://element.eleme.io/#/en-US/component/) for full API.
 
@@ -545,37 +555,77 @@ See [Element UI 2.x docs](https://element.eleme.io/#/en-US/component/) for full 
 
 Firmware 4.8.1, GL-MT3000. Extracted via `Object.keys(Vue.options.components)`:
 
-**GL.iNet (kebab-case):**
+**GL.iNet registry keys (36):**
 ```
-gl-battery          gl-ellipsis-tooltip  gl-private          gl-time-pick
-gl-button           gl-guide-icon        gl-pwd-strength     gl-tips
-gl-card             gl-line-chart        gl-qrcode           gl-title
-gl-cascader         gl-link              gl-search-input     gl-upload-card
-gl-drawer           gl-percent-circle    gl-switch           gl-week-select
-                                         gl-table            gl-wireless-signal
-                                         gl-table-column
-```
-
-**GL.iNet (PascalCase):**
-```
-GlCheckbox       GlCollapseGroup   GlDropdownItem    GlScanWifi
-GlCheckboxGroup  GlDraggableSort   GlRadio           GlToggle
-GlCollapse       GlDropdown        GlRadioGroup      GlToggleItem
-                                   GlWifiList
+gl-battery          GlCheckboxGroup   GlDropdownItem       gl-qrcode
+gl-button           GlCollapse        gl-ellipsis-tooltip  GlRadio
+gl-card             GlCollapseGroup   gl-guide-icon        GlRadioGroup
+gl-cascader         GlDraggableSort   gl-line-chart        GlScanWifi
+GlCheckbox          gl-drawer         gl-link              gl-search-input
+GlDropdown          gl-percent-circle gl-private           gl-pwd-strength
+gl-switch           gl-table          gl-table-column      gl-time-pick
+gl-tips             gl-title          GlToggle             GlToggleItem
+gl-upload-card      gl-week-select     GlWifiList           gl-wireless-signal
 ```
 
-**Element UI:**
+**Element UI registry keys (16):**
 ```
-ElDialog         ElMenuItem        ElPagination      ElTabs
-ElForm           ElMenuItemGroup   ElPopover         ElTooltip
-ElMenu           ElOption          ElSlider
-el-form-item     el-input          el-select
+ElDialog         el-input          ElOption          ElSubmenu
+ElForm           ElMenu            ElPagination      ElTabPane
+el-form-item     ElMenuItem        ElPopover         ElTabs
+                 ElMenuItemGroup   el-select         ElTooltip
+                                    ElSlider
 ```
+
+The two additional global Vue Router helpers are `RouterLink` and `RouterView`.
+They are reported separately because they are routing infrastructure, not UI-kit
+components.
 
 **NOT globally registered (local only, unavailable to plugins):**
 ```
 gl-btn           gl-alert          gl-message-fade
 ```
+
+## Firmware Differences
+
+The verified GL-MT3000 4.9.0 beta6 registry contains 57 UI components plus the
+same two Vue Router helpers. It adds five components and removes none:
+
+```
+gl-agree-check   gl-number-input   gl-otp-input   gl-select-timezone   gl-steps
+```
+
+Known prop-level changes between the inspected 4.8.1 and 4.9.0 beta6 builds:
+
+| Component | Change in 4.9.0 beta6 |
+|---|---|
+| `GlDraggableSort` | Added `group` |
+| `GlScanWifi` | Removed `clientList` |
+| `gl-ellipsis-tooltip` | Added `isDisabled` |
+| `gl-wireless-signal` | Added `signalRangs` |
+
+These differences are compatibility evidence, not a stable vendor API guarantee.
+
+## Extraction Contract
+
+`glplugin extract root@<router-ip>` computes SHA-256 over the decompressed admin
+bundle. If that fingerprint matches a runtime-verified catalog, the output contains:
+
+- `componentRegistry.status: "verified"`
+- exact `registryKey`, canonical `tag`, origin, and parent requirement metadata
+- UI components and Vue Router helpers in separate arrays
+- the legacy `components` field populated only with verified canonical UI tags
+
+For an unknown fingerprint, `componentRegistry.status` is `unknown` and
+`components` is empty. `literalComponentRegistrations` is retained only as an
+incomplete review aid; it must not be published as the global registry. This is
+intentional: statically finding `gl-*` strings previously mixed CSS classes and local
+view internals into the component list while missing PascalCase and Element UI keys.
+
+On the inspected 4.8.1 bundle, the old string regex returned 49 names. Only 29
+resolved to real global UI tags, 20 were CSS/local/internal names, and 23 real global
+UI tags were absent from its output. This audit is why unknown fingerprints now fail
+closed instead of returning a plausible-looking component count.
 
 ---
 
@@ -583,6 +633,7 @@ gl-btn           gl-alert          gl-message-fade
 
 - Use CSS variables for theming: `--error-color`, `--warning-color`, `--success-color`,
   `--title-color`, `--text-color`, `--hint-color`, `--card-bg`, `--table-border`, etc.
-- Props were extracted via `Vue.options.components[name].options.props` at runtime.
+- Props documented above were extracted via `Vue.options.components[name].options.props` at runtime.
 - See `docs/theme.md` for the full list of CSS variables.
-- Use `glplugin extract root@<router-ip>` to re-extract from any firmware version.
+- Use `glplugin extract root@<router-ip>` to identify a verified firmware catalog or
+  collect explicitly unverified diagnostics for a new bundle.

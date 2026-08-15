@@ -9,6 +9,11 @@ These controls apply to the developer CLI only. A plugin running inside the GL.i
 admin UI reuses the authenticated browser session and does not ask the user to log
 in again.
 
+Project-local router aliases are stored in `.glpluginrc.json`. The file is ignored
+by generated projects and written with mode `0600`. Its schema does not permit
+passwords, tokens, session IDs, nonces, or salts; it stores connection coordinates
+and transport policy only.
+
 ## Router credentials
 
 Router passwords are accepted through a hidden TTY prompt or one stdin line with
@@ -34,6 +39,14 @@ characters.
 Host-key checking defaults to `accept-new`: the first key is stored and subsequent
 key changes fail. `--insecure-host-key` explicitly switches checking off. It is a
 compatibility escape hatch, not the recommended default.
+
+Multi-step operations use OpenSSH connection multiplexing. The toolkit creates a
+private temporary directory, starts a `ControlMaster` only after normal SSH host-key
+and password authentication, passes its `ControlPath` to child `ssh`/`scp` calls,
+and closes and removes it in a `finally` path. `deploy`, `install`, and SSH extraction
+scope the master to one command. `dev` scopes it to the watcher lifetime and closes
+it on `Ctrl+C`. This stores a local Unix socket, not a password, and does not install
+a daemon or change the router SSH configuration.
 
 ## Extracted data
 

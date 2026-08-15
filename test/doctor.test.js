@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const { RpcError } = require('../lib/auth');
 const { formatDoctorReport, inspectRouter } = require('../lib/doctor');
-const { parseRouterArgs } = require('../lib/router-command');
+const { applyRouterTarget, parseRouterArgs } = require('../lib/router-command');
 
 test('doctor reports model, firmware, auth, and feature-gated capabilities', async function() {
   const calls = [];
@@ -67,4 +67,24 @@ test('router CLI arguments reject positional passwords', function() {
     passwordStdin: true,
   });
   assert.throws(() => parseRouterArgs(['router.local', 'secret']), /Passwords and extra positional/);
+
+  const defaults = applyRouterTarget(
+    parseRouterArgs([], { allowMissingHost: true }),
+    {
+      rpcHost: 'configured.local', username: 'admin', https: true, insecure: true,
+    }
+  );
+  assert.equal(defaults.host, 'configured.local');
+  assert.equal(defaults.username, 'admin');
+  assert.equal(defaults.https, true);
+  assert.equal(defaults.insecure, true);
+
+  const overrides = applyRouterTarget(
+    parseRouterArgs(['--http', '--secure'], { allowMissingHost: true }),
+    {
+      rpcHost: 'configured.local', username: 'admin', https: true, insecure: true,
+    }
+  );
+  assert.equal(overrides.https, false);
+  assert.equal(overrides.insecure, false);
 });

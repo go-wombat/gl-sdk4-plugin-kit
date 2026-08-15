@@ -102,6 +102,12 @@ The integration suite scaffolds, builds, packages, extracts, and inspects both
 profiles. The full-stack fixture verifies executable mode preservation, conffiles,
 default lifecycle wrappers, and `postinst-pkg/prerm-pkg` payloads.
 
+Use `glplugin inspect <file.ipk>` to read the resulting control metadata, lifecycle
+scripts, conffiles, view/menu paths, and data file list. Archive member paths are
+validated before package members are read. `glplugin install` runs project checks,
+builds and packages the project, uploads the exact artifact, and invokes `opkg
+install`; `glplugin install --no-build` reuses the current build artifact.
+
 ## Legacy Projects
 
 Projects created before manifest support can still use `package.json.pluginName`

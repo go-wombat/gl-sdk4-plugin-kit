@@ -12,11 +12,21 @@
 - [x] Preserve RPC errors instead of returning ambiguous `null` values
 - [x] Run the test suite on Linux and macOS in GitHub Actions
 
+## CLI usability
+
+- [x] Add side-effect-free command and target-action help
+- [x] Add global `--cwd`, `--json`, `--quiet`, and `--verbose` options
+- [x] Add project-local router targets without credential storage
+- [x] Add project checks and safe `.ipk` inspection
+- [x] Add build-and-deploy, install, uninstall, and watch workflows
+- [x] Use one feature-gated capability catalog for doctor and router tests
+- [x] Define stable usage, validation, connectivity, and runtime exit codes
+
 ## Release readiness
 
 - [ ] Publish the first npm package
-- [ ] Add a changelog and release process
-- [ ] Add contributing and security policies
+- [x] Add a changelog and release process
+- [x] Add contributing and security policies
 - [x] Add sanitized auth fixtures from official 4.8.1 and 4.9.0 firmware contracts
 - [ ] Add sanitized API response fixtures from multiple models
 
@@ -47,4 +57,4 @@
 - [x] Remove passwords from command-line arguments
 - [x] Add a hidden password prompt and `--password-stdin`
 - [x] Replace remaining SSH shell interpolation with argument-based process execution
-- [ ] Reuse one authenticated SSH connection across multi-step deploy and extract commands
+- [x] Reuse one authenticated SSH connection across deploy, install, extract, and dev cycles

@@ -1,6 +1,6 @@
 {
   "name": "gl-sdk4-plugin-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Unofficial toolkit for building native GL.iNet router admin panel plugins",
   "keywords": [
     "gl-inet",
@@ -24,7 +24,8 @@
     "lib/",
     "template/",
     "docs/",
-    "schema/"
+    "schema/",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=18.17.0"
@@ -37,6 +38,10 @@
     "url": "https://github.com/go-wombat/gl-sdk4-plugin-kit/issues"
   },
   "homepage": "https://github.com/go-wombat/gl-sdk4-plugin-kit#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@babel/preset-env": "^7.24.0",
