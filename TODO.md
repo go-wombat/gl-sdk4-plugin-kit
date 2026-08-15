@@ -24,7 +24,7 @@
 
 ## Release readiness
 
-- [ ] Publish the first npm package
+- [x] Publish the first npm package
 - [x] Add a changelog and release process
 - [x] Add contributing and security policies
 - [x] Add sanitized auth fixtures from official 4.8.1 and 4.9.0 firmware contracts
