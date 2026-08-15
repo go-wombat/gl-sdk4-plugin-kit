@@ -4,8 +4,18 @@
 
 | Version | Supported |
 |---|---|
-| 0.2.x | Yes |
+| 0.3.x | Yes |
+| 0.2.x | No |
 | Earlier development snapshots | No |
+
+## Vue 2 build-tool advisory
+
+The official GL.iNet SDK4 admin runtime uses Vue 2, so generated projects use
+`vue-template-compiler@2.7.16` at build time. GitHub advisory
+`GHSA-g3ch-rx76-35fx` affects every Vue 2 compiler release and has no patched Vue 2
+version. The package is a development dependency, is not installed for CLI runtime,
+and is not copied into router packages. Compile only trusted local `.vue` source;
+untrusted runtime templates are outside the supported build model.
 
 ## Reporting a vulnerability
 

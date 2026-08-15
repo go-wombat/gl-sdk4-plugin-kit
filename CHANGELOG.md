@@ -33,6 +33,8 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 
 - Repeated the live MT3000 workflow with strict preflight: doctor, package install,
   menu RPC verification, view evaluation, and uninstall all passed.
+- Production dependency audit reports zero vulnerabilities. The unpatched Vue 2
+  compiler advisory remains documented as a build-time-only constraint.
 
 ## [0.2.0] - 2026-08-15
 

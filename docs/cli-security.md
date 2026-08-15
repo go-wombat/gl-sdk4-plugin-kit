@@ -60,3 +60,12 @@ without manual review.
 
 SSH extraction stores the public admin bundle analysis, menu documents, and firmware
 version. It does not store SSH credentials or session identifiers.
+
+## Build toolchain
+
+GL.iNet's SDK4 admin runtime requires Vue 2 components. Generated projects therefore
+use `vue-template-compiler@2.7.16` as a development-only build tool. The unresolved
+moderate advisory `GHSA-g3ch-rx76-35fx` covers every Vue 2 compiler release; there is
+no compatible patched Vue 2 version. The compiler is not installed as a production
+CLI dependency and is not included in generated router packages. Only trusted local
+`.vue` source is supported as compiler input.
