@@ -23,8 +23,11 @@ cd gl-sdk4-plugin-kit
 npm install
 npm link
 
-# Create a new plugin
+# Create a UI-only plugin (default)
 glplugin init my-plugin
+
+# Or create a package with router-side files and lifecycle hooks
+glplugin init my-router-tool --profile full-stack
 
 # Build it
 cd my-plugin
@@ -55,10 +58,10 @@ ssh root@192.168.8.1 "opkg remove gl-sdk4-ui-my-plugin"
 
 | Command | Description |
 |---------|-------------|
-| `glplugin init <name>` | Scaffold a new plugin project |
+| `glplugin init <name> [--profile ui-only\|full-stack]` | Scaffold a UI-only or full-stack plugin project |
 | `glplugin build` | Build plugin (webpack + gzip) |
 | `glplugin package` | Create `.ipk` package (installable via opkg, survives reboots) |
-| `glplugin deploy <host>` | Deploy to router via SCP |
+| `glplugin deploy <host>` | Deploy UI assets to a router via SCP for development |
 | `glplugin test <host>` | Test plugin and API connectivity against live router |
 | `glplugin doctor <host>` | Detect model, firmware, auth algorithm, and read-only capabilities |
 | `glplugin extract <host>` | Extract components via SSH |
@@ -92,6 +95,7 @@ glplugin doctor router.local --https --insecure # explicit opt-out for a self-si
 
 ```
 my-plugin/
+├── gl-plugin.json        # Plugin/package manifest
 ├── src/
 │   └── index.vue          # Your Vue component
 ├── i18n/                  # Plugin translations
@@ -203,26 +207,47 @@ export default {
 
 ## Package Configuration
 
-Generated projects expose portable OpenWrt metadata through `package.json`:
+`gl-plugin.json` is the single source for the plugin ID, profile, OpenWrt package
+metadata, filesystem overlay, and lifecycle hooks. `package.json` remains the
+Node/build manifest.
 
 ```json
 {
-  "pluginName": "my-plugin",
-  "glPlugin": {
+  "schemaVersion": 1,
+  "id": "my-plugin",
+  "profile": "full-stack",
+  "package": {
+    "name": "gl-sdk4-ui-my-plugin",
     "architecture": "all",
     "depends": ["libc", "gl-sdk4-ui-core"],
-    "section": "base"
+    "section": "base",
+    "conffiles": ["/etc/config/my-plugin"]
+  },
+  "overlay": "overlay",
+  "lifecycle": {
+    "postinst": "hooks/postinst",
+    "prerm": "hooks/prerm"
   }
 }
 ```
 
-`glplugin package` also writes `Installed-Size`, `SourceName`, and the standard OpenWrt lifecycle scripts. Menu files are package-owned and are not marked as `conffiles`.
+The default `ui-only` profile packages the admin view, menu, and translations.
+`full-stack` additionally copies `overlay/` into the router root filesystem,
+supports package dependencies and conffiles, and validates POSIX shell lifecycle
+hooks. Existing pre-manifest projects using `package.json.pluginName/glPlugin`
+remain readable through a legacy adapter.
+
+`glplugin package` also writes `Installed-Size`, `SourceName`, and the standard
+OpenWrt lifecycle wrappers. Menu files are package-owned and are not marked as
+`conffiles`. See [Package Manifest and Profiles](docs/packaging.md) for the full
+contract and the firmware evidence behind hook dispatch.
 
 ## Documentation
 
 - [Components Reference](docs/components.md) — All 49 built-in `gl-*` Vue components
 - [API Reference](docs/api.md) — RPC calls and backend communication
 - [Firmware Compatibility](docs/compatibility.md) - inspected firmware artifacts, auth contract, and doctor behavior
+- [Package Manifest and Profiles](docs/packaging.md) - UI/full-stack packaging, overlays, conffiles, and lifecycle hooks
 - [Menu Format](docs/menu.md) — How to define menu entries
 - [Theme Variables](docs/theme.md) — CSS variables for native look and feel
 - [Extracted API Methods](docs/api-methods.md) - 302 methods found in the inspected firmware bundle
@@ -255,7 +280,7 @@ This SSHs into the router, downloads `app.js`, and extracts all component names,
 
 ## Compatibility Status
 
-- GL-MT3000 (Beryl AX), firmware 4.8.1 release: official root filesystem and UI auth flow inspected; previously tested live
+- GL-MT3000 (Beryl AX), firmware 4.8.1 release: official artifacts inspected and live doctor validated on 2026-08-15
 - GL-MT3000 (Beryl AX), firmware 4.9.0 beta6: official root filesystem, UI auth flow, and RPC modules inspected; not yet tested on a live router
 
 The package layout is also checked against official SDK4 UI packages. Compatibility is capability-based rather than tied to MT3000, but other models and firmware versions still require explicit live testing. See [the compatibility notes](docs/compatibility.md) for exact evidence and limits.

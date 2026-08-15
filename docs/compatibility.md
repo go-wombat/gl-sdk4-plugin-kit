@@ -15,6 +15,18 @@ Metadata and download URLs came from the official GL.iNet firmware API:
 
 No firmware image, extracted bundle, vendor source, serial number, session token, or router password is stored in this repository. The sanitized auth vectors in `test/fixtures/auth-vectors.json` contain only synthetic credentials.
 
+## Live Validation
+
+| Model | Firmware | Date | Result |
+|---|---|---|---|
+| GL-MT3000 | 4.8.1 `release8` | 2026-08-15 | Core doctor passed; `challenge.alg=1`; 17 read-only capability probes available; built-in modem correctly gated as unsupported; 4.9-only SQM and DPI methods unavailable |
+
+The live report was reviewed but is not committed as a raw fixture. It contained
+no SID, password, challenge values, serial number, or MAC address. The hidden TTY
+prompt initially left stdin in flowing mode after printing the report; the prompt
+now restores raw/encoding state, pauses a previously non-flowing stream, and the
+same live command exits normally with status 0.
+
 ## Authentication Contract
 
 The 4.8.1 release and 4.9.0 beta6 login bundles use the same flow:
@@ -46,6 +58,5 @@ The 4.9 probes include `sqm.get_config` and `dpi.get_dpi_status`. Older firmware
 
 - The 4.9.0 artifact is beta firmware, not a stable compatibility claim.
 - The 4.9.0 flow has not yet been run against a live router.
-- The travel router was offline during the latest implementation pass, so the final CLI validation used official firmware artifacts, cryptographic fixtures, and an in-process mock RPC transport.
 - HTTPS certificate validation requires a trusted router certificate. A self-signed certificate needs an explicit `--insecure` opt-out.
 - Local auth currently requires an `openssl` executable with `passwd -1`, `-5`, `-6`, and `-stdin` support.

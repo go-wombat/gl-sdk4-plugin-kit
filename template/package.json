@@ -3,15 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "description": "GL.iNet admin panel plugin: __PLUGIN_TITLE__",
-  "pluginName": "__PLUGIN_ID__",
-  "glPlugin": {
-    "architecture": "all",
-    "depends": [
-      "libc",
-      "gl-sdk4-ui-core"
-    ],
-    "section": "base"
-  },
   "scripts": {
     "build": "glplugin build",
     "package": "glplugin package",

@@ -19,6 +19,13 @@ function javascriptFiles(dir) {
   });
 }
 
+function schemaPatterns(value, result) {
+  if (!value || typeof value !== 'object') return result;
+  if (typeof value.pattern === 'string') result.push(value.pattern);
+  Object.values(value).forEach((child) => schemaPatterns(child, result));
+  return result;
+}
+
 test('all shipped JavaScript parses and runtime type definitions load', function() {
   const files = ['bin', 'lib', 'scripts', 'template'].flatMap(function(dir) {
     return javascriptFiles(path.join(root, dir));
@@ -28,6 +35,12 @@ test('all shipped JavaScript parses and runtime type definitions load', function
     assert.equal(result.stderr, '');
   });
   assert.deepEqual(require('../lib/types'), {});
+  const schema = JSON.parse(
+    fs.readFileSync(path.join(root, 'schema', 'gl-plugin.schema.json'), 'utf8')
+  );
+  schemaPatterns(schema, []).forEach((pattern) => assert.doesNotThrow(() => new RegExp(pattern)));
+  run('sh', ['-n', path.join(root, 'template', 'profiles', 'full-stack', 'hooks', 'postinst')]);
+  run('sh', ['-n', path.join(root, 'template', 'profiles', 'full-stack', 'hooks', 'prerm')]);
 });
 
 test('CLI exposes its version and reports validation errors without a stack trace', function() {

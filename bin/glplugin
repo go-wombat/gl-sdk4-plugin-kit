@@ -12,7 +12,8 @@ function printHelp() {
   gl-sdk4-plugin-kit - Build native GL.iNet admin panel plugins
 
   Usage:
-    glplugin init <name>                 Scaffold a new plugin project
+    glplugin init <name> [--profile <profile>]
+                                        Scaffold a ui-only or full-stack plugin
     glplugin build                       Build plugin (webpack + gzip)
     glplugin package                     Create an installable .ipk package
     glplugin deploy <host>               Deploy to router via SCP
@@ -25,7 +26,7 @@ function printHelp() {
     glplugin help                        Show this help
 
   Examples:
-    glplugin init my-scanner
+    glplugin init my-scanner --profile full-stack
     cd my-scanner && npm install && npm run build
     npm run package
     glplugin deploy root@192.168.8.1
@@ -33,7 +34,7 @@ function printHelp() {
 }
 
 const commands = {
-  init: function() { return require('../lib/init')(args[0]); },
+  init: function() { return require('../lib/init').cli(args); },
   build: function() { return require('../lib/build')(); },
   package: function() { return require('../lib/package')(); },
   deploy: function() { return require('../lib/deploy')(args[0]); },

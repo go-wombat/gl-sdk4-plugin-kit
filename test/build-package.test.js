@@ -32,6 +32,7 @@ test('generated plugin builds and packages with the official SDK4 layout', funct
 
   const packageResult = packagePlugin({ cwd: project.dir });
   assert.equal(packageResult.architecture, 'all');
+  assert.equal(packageResult.profile, 'ui-only');
   assert.ok(fs.existsSync(packageResult.ipkFile));
 
   const outer = path.join(cwd, 'outer');
@@ -57,11 +58,11 @@ test('generated plugin builds and packages with the official SDK4 layout', funct
   assert.match(fs.readFileSync(path.join(control, 'postinst'), 'utf8'), /default_postinst/);
   assert.match(fs.readFileSync(path.join(control, 'prerm'), 'utf8'), /default_prerm/);
 
-  const pkgFile = path.join(project.dir, 'package.json');
-  const pkg = JSON.parse(fs.readFileSync(pkgFile, 'utf8'));
-  pkg.glPlugin.architecture = 'aarch64_cortex-a53';
-  pkg.glPlugin.depends.push('gl-sdk4-fixture-backend');
-  fs.writeFileSync(pkgFile, JSON.stringify(pkg, null, 2) + '\n');
+  const manifestFile = path.join(project.dir, 'gl-plugin.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  manifest.package.architecture = 'aarch64_cortex-a53';
+  manifest.package.depends.push('gl-sdk4-fixture-backend');
+  fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
 
   const configuredPackage = packagePlugin({ cwd: project.dir });
   assert.match(configuredPackage.ipkFile, /_aarch64_cortex-a53\.ipk$/);
@@ -75,4 +76,67 @@ test('generated plugin builds and packages with the official SDK4 layout', funct
     /^Depends: libc, gl-sdk4-ui-core, gl-sdk4-fixture-backend$/m
   );
   assert.match(configuredMetadata, /^Architecture: aarch64_cortex-a53$/m);
+});
+
+test('full-stack package preserves overlay, conffiles, and OpenWrt lifecycle dispatch', function(t) {
+  const cwd = makeTempDir('glplugin-full-stack-');
+  t.after(function() { removeTempDir(cwd); });
+
+  const project = init('full-stack-fixture', { cwd, profile: 'full-stack' });
+  fs.symlinkSync(path.join(repositoryRoot, 'node_modules'), path.join(project.dir, 'node_modules'));
+  build({ cwd: project.dir });
+
+  const packageResult = packagePlugin({ cwd: project.dir });
+  assert.equal(packageResult.profile, 'full-stack');
+
+  const outer = path.join(cwd, 'outer');
+  const control = path.join(cwd, 'control');
+  const data = path.join(cwd, 'data');
+  extractTarGz(packageResult.ipkFile, outer);
+  extractTarGz(path.join(outer, 'control.tar.gz'), control);
+  extractTarGz(path.join(outer, 'data.tar.gz'), data);
+
+  const backend = path.join(
+    data, 'usr', 'libexec', 'full-stack-fixture', 'example-backend'
+  );
+  assert.ok(fs.existsSync(path.join(data, 'etc', 'config', 'full-stack-fixture')));
+  assert.ok(fs.statSync(backend).mode & 0o100);
+  assert.match(fs.readFileSync(backend, 'utf8'), /"status":"ok"/);
+  assert.equal(
+    fs.readFileSync(path.join(control, 'conffiles'), 'utf8'),
+    '/etc/config/full-stack-fixture\n'
+  );
+  assert.match(fs.readFileSync(path.join(control, 'postinst'), 'utf8'), /default_postinst/);
+  assert.match(fs.readFileSync(path.join(control, 'prerm'), 'utf8'), /default_prerm/);
+  assert.match(fs.readFileSync(path.join(control, 'postinst-pkg'), 'utf8'), /exit 0/);
+  assert.match(fs.readFileSync(path.join(control, 'prerm-pkg'), 'utf8'), /exit 0/);
+  assert.ok(fs.statSync(path.join(control, 'postinst-pkg')).mode & 0o100);
+  assert.ok(fs.statSync(path.join(control, 'prerm-pkg')).mode & 0o100);
+
+  const manifestFile = path.join(project.dir, 'gl-plugin.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  manifest.package.conffiles.push('/etc/config/not-packaged');
+  fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
+  assert.throws(
+    () => packagePlugin({ cwd: project.dir }),
+    /Conffile is not present in package data: \/etc\/config\/not-packaged/
+  );
+
+  manifest.package.conffiles.pop();
+  fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
+  const collisionDir = path.join(project.dir, 'overlay', 'www', 'views');
+  fs.mkdirSync(collisionDir, { recursive: true });
+  const collisionFile = path.join(collisionDir, 'gl-sdk4-ui-full-stack-fixture.common.js.gz');
+  fs.writeFileSync(collisionFile, 'overlay collision');
+  assert.throws(
+    () => packagePlugin({ cwd: project.dir }),
+    /Overlay path collision: \/www\/views\/gl-sdk4-ui-full-stack-fixture/
+  );
+  fs.rmSync(collisionFile);
+
+  const postinst = path.join(project.dir, 'hooks', 'postinst');
+  const validPostinst = fs.readFileSync(postinst, 'utf8');
+  fs.writeFileSync(postinst, '#!/bin/sh\nif broken; then\n');
+  assert.throws(() => packagePlugin({ cwd: project.dir }), /sh exited with status/);
+  fs.writeFileSync(postinst, validPostinst);
 });

@@ -2,10 +2,10 @@
 
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
-const { Readable } = require('node:stream');
+const { PassThrough, Readable } = require('node:stream');
 const test = require('node:test');
 const vectors = require('./fixtures/auth-vectors.json');
-const { readPasswordFromStream } = require('../lib/prompt');
+const { promptHidden, readPasswordFromStream } = require('../lib/prompt');
 const {
   RpcError,
   call,
@@ -52,6 +52,27 @@ test('unknown challenge algorithms fail explicitly', function() {
 test('--password-stdin reads one secret line without putting it in CLI arguments', async function() {
   assert.equal(await readPasswordFromStream(Readable.from(['streamed-secret\n'])), 'streamed-secret');
   await assert.rejects(readPasswordFromStream(Readable.from(['\n'])), /No router password/);
+});
+
+test('hidden password prompt releases a TTY that was not already flowing', async function() {
+  const input = new PassThrough();
+  const output = new PassThrough();
+  const rawModes = [];
+  input.isTTY = true;
+  input.isRaw = false;
+  input.setRawMode = function(enabled) {
+    this.isRaw = enabled;
+    rawModes.push(enabled);
+  };
+
+  assert.equal(input.readableFlowing, null);
+  const passwordPromise = promptHidden('Secret: ', { input, output });
+  input.write('hidden-secret\n');
+
+  assert.equal(await passwordPromise, 'hidden-secret');
+  assert.deepEqual(rawModes, [true, false]);
+  assert.equal(input.readableFlowing, false);
+  assert.equal(input.listenerCount('data'), 0);
 });
 
 test('HTTP RPC login and authenticated calls preserve structured errors', async function() {

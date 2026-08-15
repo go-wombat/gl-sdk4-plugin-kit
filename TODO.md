@@ -22,9 +22,9 @@
 
 ## Full-stack packages
 
-- [ ] Define `ui-only` and `full-stack` package profiles
-- [ ] Add a router filesystem overlay to generated packages
-- [ ] Support backend package dependencies and custom lifecycle hooks
+- [x] Define `ui-only` and `full-stack` package profiles
+- [x] Add a router filesystem overlay to generated packages
+- [x] Support backend package dependencies and custom lifecycle hooks
 - [ ] Use Airbnb Radar as the full-stack reference plugin
 
 ## Firmware compatibility
