@@ -65,6 +65,8 @@ test('generated plugin builds and packages with the official SDK4 layout', funct
   assert.match(metadata, /^Package: gl-sdk4-ui-package-fixture$/m);
   assert.match(metadata, /^Depends: libc, gl-sdk4-ui-core$/m);
   assert.match(metadata, /^Architecture: all$/m);
+  assert.match(metadata, /^X-GL-Firmware-Min: 4\.8\.0$/m);
+  assert.match(metadata, /^X-GL-UI-Contract: sdk4-modern-v1$/m);
   assert.match(metadata, /^Installed-Size: [1-9][0-9]*$/m);
   assert.match(metadata, /^SourceName: gl-sdk4-ui-package-fixture$/m);
   assert.match(fs.readFileSync(path.join(control, 'postinst'), 'utf8'), /default_postinst/);

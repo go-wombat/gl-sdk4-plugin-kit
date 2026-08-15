@@ -5,6 +5,34 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-15
+
+### Added
+
+- Strict `sdk4-modern-v1` compatibility policy with a firmware 4.8 minimum,
+  exact model/firmware/bundle tuples, portable component requirements, and an
+  explicit `--allow-unverified` development override.
+- Official firmware artifact matrix for GL-MT3000 4.8.1, GL-AXT1800 4.8.3,
+  GL-SFT1200 4.8.3, and GL-MT6000 4.9.1.
+- SSH platform preflight for firmware, UI runtime, `opkg`, package architecture,
+  lifecycle dispatch, and free overlay space.
+- Firmware contract CI that verifies vendor SHA-256 values and inspects the
+  official SquashFS images.
+
+### Changed
+
+- `doctor` now identifies the exact HTTP admin bundle instead of treating every
+  `4.x` firmware as compatible.
+- `test` now requires the project menu entry from `ui.get_menu_list` in addition
+  to the installed view and Vue export.
+- Generated manifests and package metadata declare their firmware/runtime
+  requirements.
+
+### Validation
+
+- Repeated the live MT3000 workflow with strict preflight: doctor, package install,
+  menu RPC verification, view evaluation, and uninstall all passed.
+
 ## [0.2.0] - 2026-08-15
 
 ### Added
@@ -45,5 +73,6 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
   4.8.1 `release8`, including full-stack install, backend execution, development
   redeploy, and package cleanup.
 
-[Unreleased]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/releases/tag/v0.2.0

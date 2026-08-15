@@ -1,5 +1,11 @@
 # GL.iNet Vue Components Reference
 
+The cross-model portable contract contains `gl-button`, `gl-card`,
+`gl-line-chart`, `gl-tips`, and `gl-title`. Their global registrations are verified
+in the official MT3000 4.8.1, AXT1800 4.8.3, SFT1200 4.8.3, and MT6000 4.9.1
+admin bundles. The larger catalog below remains fingerprint-specific and must not
+be treated as universally portable.
+
 > Extracted from GL-MT3000 firmware 4.8.1 by inspecting `Vue.options.components`
 > in the running official admin UI. The verified registry contains 52 UI
 > components plus the `RouterLink` and `RouterView` helpers.

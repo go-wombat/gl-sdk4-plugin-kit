@@ -28,4 +28,43 @@ function removeTempDir(dir) {
   fs.rmSync(dir, { recursive: true, force: true });
 }
 
-module.exports = { extractTarGz, makeTempDir, removeTempDir, run };
+function compatiblePlatform(overrides) {
+  return {
+    source: 'test-fixture',
+    model: 'GL-MT3000',
+    firmwareVersion: '4.8.1',
+    analysis: {
+      bundleSha256: '0409574b320a74de904a690df723134fc07471cddf5d622691ebbaa403116705',
+      contracts: { viewLoader: true, rpcRequest: true },
+      portableComponents: ['gl-button', 'gl-card', 'gl-line-chart', 'gl-tips', 'gl-title'],
+    },
+    compatibility: {
+      compatible: true,
+      status: 'live-supported',
+      reason: 'test fixture',
+    },
+    fileChecks: {
+      opkg: true,
+      views: true,
+      menus: true,
+      functions: true,
+      postinst: true,
+      postinst_pkg: true,
+      prerm: true,
+      prerm_pkg: true,
+    },
+    architectures: [{ name: 'aarch64_cortex-a53', priority: 10 }],
+    corePackage: { Package: 'gl-sdk4-ui-core' },
+    freeKilobytes: 32768,
+    errors: [],
+    ...(overrides || {}),
+  };
+}
+
+module.exports = {
+  compatiblePlatform,
+  extractTarGz,
+  makeTempDir,
+  removeTempDir,
+  run,
+};

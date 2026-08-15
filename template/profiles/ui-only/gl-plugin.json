@@ -3,6 +3,13 @@
   "schemaVersion": 1,
   "id": "__PLUGIN_ID__",
   "profile": "ui-only",
+  "compatibility": {
+    "minimumFirmware": "4.8.0",
+    "requiredComponents": [
+      "gl-card",
+      "gl-title"
+    ]
+  },
   "package": {
     "name": "gl-sdk4-ui-__PLUGIN_ID__",
     "architecture": "all",

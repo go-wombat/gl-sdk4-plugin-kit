@@ -15,6 +15,11 @@ GL.iNet's admin panel loads plugins dynamically:
 This toolkit automates the entire workflow: scaffold, validate, build, inspect,
 deploy, and install.
 
+The supported runtime starts at GL.iNet firmware 4.8. Router-changing commands
+fingerprint the exact admin bundle and reject unknown firmware by default. Support
+requires a verified model, normalized firmware version, and bundle SHA-256 tuple;
+it is not inferred from a model name or a `4.x` version string.
+
 ## Quick Start
 
 ```bash
@@ -65,8 +70,8 @@ glplugin uninstall
 | `glplugin package` | Create `.ipk` package (installable via opkg, survives reboots) |
 | `glplugin inspect <package.ipk>` | Inspect package metadata and file layout safely |
 | `glplugin target <action>` | Add, select, list, show, or remove router aliases |
-| `glplugin deploy [target\|host] [--build]` | Optionally build and deploy UI assets via SCP |
-| `glplugin install [target\|host]` | Check, build, package, upload, and opkg install |
+| `glplugin deploy [target\|host] [--build]` | Preflight the router, then optionally build and deploy UI assets via SCP |
+| `glplugin install [target\|host]` | Check, build, package, preflight, upload, and opkg install |
 | `glplugin uninstall [target\|host]` | Remove the project package from a router |
 | `glplugin dev [target\|host]` | Watch, rebuild, and deploy UI changes |
 | `glplugin test [target\|host]` | Test plugin and capability connectivity against a router |
@@ -100,10 +105,15 @@ glplugin doctor router.local --https
 glplugin doctor router.local --https --insecure # explicit opt-out for a self-signed certificate
 ```
 
-`doctor` calls only read methods. Missing optional modules are reported as unavailable or not supported; they do not make the core router check fail.
+`doctor` fingerprints the exact admin bundle, enforces the firmware 4.8 minimum,
+and calls only read methods. Missing optional modules are reported as unavailable
+or not supported; they do not make the core router check fail. An unknown model,
+firmware, and bundle tuple does fail compatibility unless `--allow-unverified` is
+supplied explicitly.
 
-`test` uses the same feature-gated capability catalog as `doctor`; it does not run a
-second hard-coded sweep of firmware methods or print any part of the session ID.
+`test` uses the same feature-gated capability catalog as `doctor`, verifies the
+project view through `ui.get_menu_list`, downloads the deployed bundle, and checks
+its Vue export. It does not print any part of the session ID.
 
 SSH commands use argument arrays without a local shell. New host keys are accepted
 once and then checked on later connections. `--insecure-host-key` disables this
@@ -234,6 +244,10 @@ Node/build manifest.
   "schemaVersion": 1,
   "id": "my-plugin",
   "profile": "full-stack",
+  "compatibility": {
+    "minimumFirmware": "4.8.0",
+    "requiredComponents": ["gl-card", "gl-title"]
+  },
   "package": {
     "name": "gl-sdk4-ui-my-plugin",
     "architecture": "all",
@@ -255,10 +269,10 @@ supports package dependencies and conffiles, and validates POSIX shell lifecycle
 hooks. Existing pre-manifest projects using `package.json.pluginName/glPlugin`
 remain readable through a legacy adapter.
 
-`glplugin package` also writes `Installed-Size`, `SourceName`, and the standard
-OpenWrt lifecycle wrappers. Menu files are package-owned and are not marked as
-`conffiles`. See [Package Manifest and Profiles](docs/packaging.md) for the full
-contract and the firmware evidence behind hook dispatch.
+`glplugin package` also writes `Installed-Size`, `SourceName`,
+`X-GL-Firmware-Min`, `X-GL-UI-Contract`, and the standard OpenWrt lifecycle
+wrappers. Menu files are package-owned and are not marked as `conffiles`. See
+[Package Manifest and Profiles](docs/packaging.md) for the full contract.
 
 ## Documentation
 
@@ -311,10 +325,16 @@ share that output.
 
 ## Compatibility Status
 
-- GL-MT3000 (Beryl AX), firmware 4.8.1 release: official artifacts inspected and live doctor validated on 2026-08-15
-- GL-MT3000 (Beryl AX), firmware 4.9.0 beta6: official root filesystem, UI auth flow, and RPC modules inspected; not yet tested on a live router
+- GL-MT3000 4.8.1 release: live supported.
+- GL-AXT1800 4.8.3 release: official artifact verified.
+- GL-SFT1200 4.8.3 release: official artifact verified.
+- GL-MT6000 4.9.1 release: official artifact verified.
 
-The package layout is also checked against official SDK4 UI packages. Compatibility is capability-based rather than tied to MT3000, but other models and firmware versions still require explicit live testing. See [the compatibility notes](docs/compatibility.md) for exact evidence and limits.
+GitHub Actions downloads these exact official images and verifies their published
+SHA-256, SquashFS package layout, auth/runtime contract, portable components,
+`opkg`, menu layout, and lifecycle dispatch. New bundle fingerprints remain
+blocked until added to the catalog. See [the compatibility notes](docs/compatibility.md)
+for the exact matrix and validation boundary.
 
 ## Disclaimer
 

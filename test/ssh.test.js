@@ -16,7 +16,7 @@ const {
   validateRemoteFilename,
   validateRemotePath,
 } = require('../lib/ssh-transport');
-const { makeTempDir, removeTempDir } = require('./helpers');
+const { compatiblePlatform, makeTempDir, removeTempDir } = require('./helpers');
 
 function successful(stdout) {
   return { status: 0, stdout: stdout || Buffer.alloc(0), stderr: Buffer.alloc(0) };
@@ -94,11 +94,14 @@ test('deploy preflights inputs and uploads every asset through argument arrays',
   };
   const result = deploy(['router.local'], {
     cwd: project.dir,
+    inspectPlatform() { return compatiblePlatform(); },
     log() {},
     spawnSync,
   });
 
-  assert.deepEqual(result, { target: 'root@router.local', uploaded: 3 });
+  assert.equal(result.target, 'root@router.local');
+  assert.equal(result.uploaded, 3);
+  assert.equal(result.compatibility.status, 'live-supported');
   assert.deepEqual(
     calls.map((call) => call.command),
     ['ssh', 'scp', 'scp', 'ssh', 'scp', 'ssh']
@@ -151,6 +154,8 @@ test('SSH extraction analyzes a gzipped bundle and framed menu documents', funct
 
   const result = extract.extractViaSsh('router.local', { spawnSync });
   assert.deepEqual(result.components, []);
+  assert.equal(result.bundleCatalog.status, 'unknown-bundle');
+  assert.deepEqual(result.bundleCatalog.matches, []);
   assert.equal(result.componentRegistry.status, 'unknown');
   assert.equal(result.componentRegistry.uiComponentCount, 0);
   assert.deepEqual(result.literalComponentRegistrations, []);
@@ -299,10 +304,10 @@ test('RPC extraction resolves a configured target and applies its transport defa
 
 test('deploy and extract parsers reject unknown flags and extra positionals', function() {
   assert.deepEqual(deploy.parseDeployArgs(['router.local', '--insecure-host-key']), {
-    host: 'router.local', build: false, hostKeyPolicy: 'insecure',
+    host: 'router.local', build: false, hostKeyPolicy: 'insecure', allowUnverified: false,
   });
   assert.deepEqual(deploy.parseDeployArgs(['router.local', '--build', '--strict-host-key']), {
-    host: 'router.local', build: true, hostKeyPolicy: 'strict',
+    host: 'router.local', build: true, hostKeyPolicy: 'strict', allowUnverified: false,
   });
   assert.throws(() => deploy.parseDeployArgs(['router.local', '--port', '22']), /Unknown/);
   assert.equal(extract.parseExtractArgs(['router.local', '--full']).sshMode, true);

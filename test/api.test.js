@@ -3,8 +3,9 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const catalog = require('../lib/api-catalog');
-const { createGlApi } = require('../lib/api');
+const { createGlApi, resolveRpcRequest } = require('../lib/api');
 const { createApiClient } = require('../lib/api-client');
+const safeRpcMixin = require('../lib/safe-rpc-mixin');
 
 function shape(api) {
   return Object.fromEntries(Object.keys(api).map(function(namespace) {
@@ -53,4 +54,44 @@ test('Node API uses the same module and snake_case mapping', async function() {
 
   assert.deepEqual(await api.vpnClient.getAllConfigList(), { ok: true });
   assert.deepEqual(calls, [['vpn-client', 'get_all_config_list', {}]]);
+});
+
+test('Vue RPC adapter prefers the modern runtime and has an explicit legacy fallback', async function() {
+  const calls = [];
+  const modern = resolveRpcRequest({
+    $rpcRequest(method) { calls.push(`modern:${method}`); },
+    $request(method) { calls.push(`legacy:${method}`); },
+  });
+  modern('call');
+  assert.deepEqual(calls, ['modern:call']);
+
+  const legacy = resolveRpcRequest({
+    $request(method) { calls.push(`legacy:${method}`); },
+  });
+  legacy('call');
+  assert.deepEqual(calls, ['modern:call', 'legacy:call']);
+  assert.throws(() => resolveRpcRequest({}), /RPC runtime is unavailable/);
+});
+
+test('safe RPC mixin handles modern, legacy, and missing router runtimes', async function() {
+  const calls = [];
+  const modern = {
+    ...safeRpcMixin.methods,
+    $rpcRequest(method, params) {
+      calls.push(['modern', method, params]);
+      return Promise.resolve({ ok: true });
+    },
+  };
+  assert.deepEqual(await modern.safeRpc('system', 'get_info'), { ok: true });
+
+  const legacy = {
+    ...safeRpcMixin.methods,
+    $request(method, params) {
+      calls.push(['legacy', method, params]);
+      return Promise.resolve({ ok: true });
+    },
+  };
+  assert.deepEqual(await legacy.safeRpc('system', 'get_info'), { ok: true });
+  assert.equal(await safeRpcMixin.methods.safeRpc.call({}, 'system', 'get_info'), null);
+  assert.deepEqual(calls.map((call) => call[0]), ['modern', 'legacy']);
 });

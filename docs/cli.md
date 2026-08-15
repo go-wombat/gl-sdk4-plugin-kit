@@ -16,10 +16,38 @@ glplugin install
 glplugin doctor
 ```
 
-`install` runs project checks, builds the view, creates the `.ipk`, uploads it to
-`/tmp`, and invokes `opkg install`. Use `--no-build` to package and install an
-existing build artifact. The temporary router-side `.ipk` is removed after the
-install attempt while preserving the `opkg` exit status.
+`install` runs project checks, builds the view, creates the `.ipk`, performs a
+strict router platform preflight, uploads it to `/tmp`, and invokes `opkg install`.
+Use `--no-build` to package and install an existing build artifact. The temporary
+router-side `.ipk` is removed after the install attempt while preserving the
+`opkg` exit status.
+
+## Platform Preflight
+
+`deploy`, the first `dev` cycle, and `install` inspect the router before uploading
+project files. The preflight requires:
+
+- firmware at or above the project's declared minimum (4.8 by default);
+- an exact model, normalized firmware, and admin bundle fingerprint tuple from
+  the verified catalog;
+- the modern SDK4 view loader, `$rpcRequest`, and required portable components;
+- `opkg`, `gl-sdk4-ui-core`, UI/menu paths, and OpenWrt lifecycle dispatch;
+- a package architecture accepted by the router and at least 2 MiB free overlay
+  space.
+
+Unknown exact tuples are rejected even when their static contract looks
+modern. To investigate a newly released firmware without claiming support, use
+`--allow-unverified` explicitly:
+
+```bash
+glplugin doctor --allow-unverified
+glplugin deploy --build --allow-unverified
+glplugin install --allow-unverified
+```
+
+The override applies only to an unknown modern bundle fingerprint. It cannot
+bypass the minimum firmware, missing platform files, architecture mismatch, or
+missing lifecycle support.
 
 ## Targets
 

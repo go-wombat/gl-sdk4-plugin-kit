@@ -33,6 +33,10 @@ conffiles, or lifecycle behavior.
   "schemaVersion": 1,
   "id": "my-plugin",
   "profile": "full-stack",
+  "compatibility": {
+    "minimumFirmware": "4.8.0",
+    "requiredComponents": ["gl-card", "gl-title"]
+  },
   "package": {
     "name": "gl-sdk4-ui-my-plugin",
     "architecture": "all",
@@ -55,6 +59,11 @@ become OpenWrt control fields. Keep `architecture: all` for portable shell/Lua
 packages; set a concrete opkg architecture when the overlay contains native
 binaries.
 
+`compatibility.minimumFirmware` defaults to `4.8.0`. Required components must be
+part of the verified portable UI contract for the target's exact admin bundle.
+The package control file records this as `X-GL-Firmware-Min` and
+`X-GL-UI-Contract`; `install` enforces the same values before upload.
+
 Every `conffiles` entry must be an absolute, normalized path to a regular file
 that exists in the assembled package data. OpenWrt then preserves user-modified
 configuration according to opkg conffile semantics. Generated menu/view/i18n
@@ -68,8 +77,9 @@ library on the developer machine.
 
 ## Lifecycle Dispatch
 
-Official GL-MT3000 4.9 beta6 root filesystem inspection confirmed the GL/OpenWrt
-dispatch contract in `/lib/functions.sh`:
+Official MT3000 4.8.1, AXT1800 4.8.3, SFT1200 4.8.3, and MT6000 4.9.1 root
+filesystem inspection confirmed the GL/OpenWrt dispatch contract in
+`/lib/functions.sh`:
 
 1. The package `postinst` wrapper sources `/lib/functions.sh` and calls
    `default_postinst`.
@@ -105,8 +115,9 @@ default lifecycle wrappers, and `postinst-pkg/prerm-pkg` payloads.
 Use `glplugin inspect <file.ipk>` to read the resulting control metadata, lifecycle
 scripts, conffiles, view/menu paths, and data file list. Archive member paths are
 validated before package members are read. `glplugin install` runs project checks,
-builds and packages the project, uploads the exact artifact, and invokes `opkg
-install`; `glplugin install --no-build` reuses the current build artifact.
+builds and packages the project, performs strict platform/architecture/free-space
+preflight, uploads the exact artifact, and invokes `opkg install`; `glplugin
+install --no-build` reuses the current build artifact.
 
 ## Legacy Projects
 

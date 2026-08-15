@@ -13,7 +13,7 @@ const { normalizeArchiveEntry } = require('../lib/inspect');
 const targetConfig = require('../lib/target-config');
 const { verifyRouter } = require('../lib/test');
 const { installPlugin, uninstallPlugin } = require('../lib/workflow');
-const { makeTempDir, removeTempDir } = require('./helpers');
+const { compatiblePlatform, makeTempDir, removeTempDir } = require('./helpers');
 
 const repositoryRoot = path.resolve(__dirname, '..');
 
@@ -162,6 +162,7 @@ test('install and uninstall workflows use exact SCP and SSH argument arrays', fu
     packagePlugin() {
       return { ipkFile, packageName: 'gl-sdk4-ui-workflow-fixture' };
     },
+    inspectPlatform() { return compatiblePlatform(); },
     log() {},
     spawnSync,
   });
@@ -236,6 +237,12 @@ test('router test reuses doctor capabilities and never exposes a session identif
       ok: true,
       target: 'http://router.local',
       router: { model: 'GL-MT3000', firmware_version: '4.8.1' },
+      compatibility: {
+        compatible: true,
+        status: 'live-supported',
+        reason: 'fixture',
+      },
+      plugin: { menu_view: 'router-test-fixture', menu_loaded: true },
       capabilities: [
         { id: 'wifi', status: 'available' },
         { id: 'dpi', status: 'unavailable' },

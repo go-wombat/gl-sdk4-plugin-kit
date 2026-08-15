@@ -19,6 +19,10 @@ test('manifest is authoritative and rejects profile/path typos', function(t) {
   const manifestFile = path.join(project.dir, 'gl-plugin.json');
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
 
+  const normalized = readPluginProject(project.dir).manifest;
+  assert.equal(normalized.compatibility.minimumFirmware, '4.8.0');
+  assert.deepEqual(normalized.compatibility.requiredComponents, ['gl-card', 'gl-title']);
+
   manifest.packge = {};
   writeJson(manifestFile, manifest);
   assert.throws(() => readPluginProject(project.dir), /Unknown manifest field: packge/);
@@ -43,6 +47,16 @@ test('manifest is authoritative and rejects profile/path typos', function(t) {
   manifest.package.architecture = 64;
   writeJson(manifestFile, manifest);
   assert.throws(() => readPluginProject(project.dir), /"package\.architecture" must be a string/);
+
+  manifest.package.architecture = 'all';
+  manifest.compatibility.minimumFirmware = 'latest';
+  writeJson(manifestFile, manifest);
+  assert.throws(() => readPluginProject(project.dir), /minimumFirmware/);
+
+  manifest.compatibility.minimumFirmware = '4.8.0';
+  manifest.compatibility.requiredComponents = ['gl-card', 'gl-card'];
+  writeJson(manifestFile, manifest);
+  assert.throws(() => readPluginProject(project.dir), /must not contain duplicates/);
 });
 
 test('legacy package.json projects remain readable without a manifest', function(t) {
@@ -63,6 +77,7 @@ test('legacy package.json projects remain readable without a manifest', function
   assert.equal(project.manifest.id, 'legacy-fixture');
   assert.equal(project.manifest.profile, 'ui-only');
   assert.equal(project.manifest.package.architecture, 'mipsel_24kc');
+  assert.equal(project.manifest.compatibility.minimumFirmware, '4.8.0');
   assert.deepEqual(
     project.manifest.package.depends,
     ['libc', 'gl-sdk4-ui-core', 'legacy-backend']
