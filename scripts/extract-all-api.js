@@ -10,7 +10,7 @@
  *
  * Usage:
  *   node scripts/extract-all-api.js <views-dir>
- *   node scripts/extract-all-api.js <views-dir> --live <host> <password>
+ *   node scripts/extract-all-api.js <views-dir> --live <host> [--password-stdin]
  */
 
 const fs = require('fs');
@@ -19,10 +19,10 @@ const path = require('path');
 const viewsDir = process.argv[2];
 const isLive = process.argv[3] === '--live';
 const liveHost = process.argv[4];
-const livePass = process.argv[5];
+const passwordStdin = process.argv.includes('--password-stdin');
 
 if (!viewsDir) {
-  console.error('Usage: node scripts/extract-all-api.js <views-dir> [--live <host> <password>]');
+  console.error('Usage: node scripts/extract-all-api.js <views-dir> [--live <host> [--password-stdin]]');
   process.exit(1);
 }
 
@@ -211,7 +211,9 @@ async function testLive(methods, host, password) {
   console.error(`\nFound ${methodCount} methods in ${viewCount} views:`);
   console.error(`  Read: ${readCount}, Write: ${writeCount}, Create: ${createCount}, Delete: ${deleteCount}, Action: ${actionCount}`);
 
-  if (isLive && liveHost && livePass) {
+  if (isLive && liveHost) {
+    const { readRouterPassword } = require('../lib/prompt');
+    const livePass = await readRouterPassword({ passwordStdin });
     console.error(`\nLive testing against ${liveHost}...`);
     data.live_results = await testLive(data.methods, liveHost, livePass);
     const okCount = Object.values(data.live_results).filter(r => r.status === 'ok').length;

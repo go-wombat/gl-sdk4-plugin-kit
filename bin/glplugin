@@ -1,53 +1,65 @@
 #!/usr/bin/env node
 
+'use strict';
+
+const pkg = require('../package.json');
+
 const command = process.argv[2];
 const args = process.argv.slice(3);
 
-const commands = {
-  init: () => require('../lib/init')(args[0]),
-  build: () => require('../lib/build')(),
-  package: () => require('../lib/package')(),
-  deploy: () => require('../lib/deploy')(args[0]),
-  extract: () => require('../lib/extract')(args[0]),
-  test: () => require('../lib/test')(args[0]),
-  help: () => printHelp(),
-};
-
 function printHelp() {
   console.log(`
-  gl-sdk4-plugin-kit — Build native GL.iNet admin panel plugins
+  gl-sdk4-plugin-kit - Build native GL.iNet admin panel plugins
 
   Usage:
-    glplugin init <name>              Scaffold a new plugin project
-    glplugin build                    Build plugin (webpack + gzip)
-    glplugin package                  Create .ipk package (survives reboots)
-    glplugin deploy <host>            Deploy to router via SCP
-    glplugin extract root@<host>      Extract components via SSH
-    glplugin extract <host> --rpc     Discover API endpoints via HTTP (no SSH)
-    glplugin extract root@<host> --full  Both SSH + RPC extraction
-    glplugin test <host> [password]   Test plugin and API against live router
-    glplugin help                     Show this help
+    glplugin init <name>                 Scaffold a new plugin project
+    glplugin build                       Build plugin (webpack + gzip)
+    glplugin package                     Create an installable .ipk package
+    glplugin deploy <host>               Deploy to router via SCP
+    glplugin extract root@<host>         Extract components via SSH
+    glplugin extract <host> --rpc        Discover API endpoints via HTTP
+    glplugin extract root@<host> --full  Run both SSH and RPC extraction
+    glplugin test <host>                 Test against a live router
+    glplugin doctor <host>               Detect firmware and read-only capabilities
+    glplugin --version                   Print the toolkit version
+    glplugin help                        Show this help
 
   Examples:
     glplugin init my-scanner
-    cd my-scanner && npm install && glplugin build
-    glplugin package
-    glplugin deploy root@192.168.14.1
-    glplugin test 192.168.14.1
-    glplugin extract 192.168.14.1 --rpc
+    cd my-scanner && npm install && npm run build
+    npm run package
+    glplugin deploy root@192.168.8.1
   `);
 }
 
-if (!command || !commands[command]) {
+const commands = {
+  init: function() { return require('../lib/init')(args[0]); },
+  build: function() { return require('../lib/build')(); },
+  package: function() { return require('../lib/package')(); },
+  deploy: function() { return require('../lib/deploy')(args[0]); },
+  extract: function() { return require('../lib/extract')(args[0]); },
+  test: function() { return require('../lib/test')(args); },
+  doctor: function() { return require('../lib/doctor')(args); },
+  help: printHelp,
+};
+
+function reportError(error) {
+  console.error(`Error: ${error && error.message ? error.message : error}`);
+  process.exitCode = error && error.exitCode ? error.exitCode : 1;
+}
+
+if (command === '--version' || command === '-v' || command === 'version') {
+  console.log(pkg.version);
+} else if (!command) {
   printHelp();
-  process.exit(command ? 1 : 0);
+} else if (!commands[command]) {
+  printHelp();
+  process.exitCode = 1;
 } else {
-  const result = commands[command]();
-  // Handle async commands
-  if (result && typeof result.catch === 'function') {
-    result.catch((err) => {
-      console.error('Error:', err.message);
-      process.exit(1);
-    });
+  try {
+    const result = commands[command]();
+    if (result && typeof result.catch === 'function') result.catch(reportError);
+  } catch (error) {
+    reportError(error);
   }
 }

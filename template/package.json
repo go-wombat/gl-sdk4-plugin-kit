@@ -1,11 +1,21 @@
 {
-  "name": "gl-plugin-example",
+  "name": "gl-plugin-__PLUGIN_ID__",
   "version": "1.0.0",
   "private": true,
-  "pluginName": "example",
+  "description": "GL.iNet admin panel plugin: __PLUGIN_TITLE__",
+  "pluginName": "__PLUGIN_ID__",
+  "glPlugin": {
+    "architecture": "all",
+    "depends": [
+      "libc",
+      "gl-sdk4-ui-core"
+    ],
+    "section": "base"
+  },
   "scripts": {
     "build": "glplugin build",
-    "deploy": "node ../lib/deploy.js"
+    "package": "glplugin package",
+    "deploy": "glplugin deploy"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",

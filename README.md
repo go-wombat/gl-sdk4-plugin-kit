@@ -1,8 +1,8 @@
 # gl-sdk4-plugin-kit
 
-Unofficial toolkit for building native admin panel plugins for GL.iNet routers (firmware 4.x).
+Unofficial toolkit for building native SDK4 admin panel plugins for GL.iNet routers.
 
-GL.iNet routers run a closed-source Vue.js admin UI on top of OpenWrt. There is no official SDK or documentation for extending it. This project provides everything you need to build, test, and deploy custom plugins that appear as native menu items in the GL.iNet admin panel.
+GL.iNet routers run an SDK4 Vue.js admin UI on top of OpenWrt. GL.iNet publishes firmware build tooling and prebuilt SDK4 packages, but no complete extension SDK for adding native admin pages. This project documents the package contract and automates building, testing, and deploying compatible plugins.
 
 ## How It Works
 
@@ -17,8 +17,11 @@ This toolkit automates the entire workflow: scaffold, build, and deploy.
 ## Quick Start
 
 ```bash
-# Install globally
-npm install -g gl-sdk4-plugin-kit
+# Until the first npm release, install the CLI from this repository
+git clone https://github.com/go-wombat/gl-sdk4-plugin-kit.git
+cd gl-sdk4-plugin-kit
+npm install
+npm link
 
 # Create a new plugin
 glplugin init my-plugin
@@ -57,10 +60,33 @@ ssh root@192.168.8.1 "opkg remove gl-sdk4-ui-my-plugin"
 | `glplugin package` | Create `.ipk` package (installable via opkg, survives reboots) |
 | `glplugin deploy <host>` | Deploy to router via SCP |
 | `glplugin test <host>` | Test plugin and API connectivity against live router |
+| `glplugin doctor <host>` | Detect model, firmware, auth algorithm, and read-only capabilities |
 | `glplugin extract <host>` | Extract components via SSH |
 | `glplugin extract <ip> --rpc` | Discover API endpoints via RPC (no SSH needed) |
 | `glplugin extract <host> --full` | Both SSH + RPC extraction |
 | `glplugin help` | Show help |
+
+### Router authentication and doctor
+
+This authentication is only for developer-side CLI commands such as `doctor`, `test`, and RPC extraction. A plugin page loaded inside the GL.iNet admin UI continues to use the existing admin session and does not show a second login.
+
+Router passwords are never accepted as positional CLI arguments. Interactive commands use a hidden TTY prompt; automation can provide one password line on stdin:
+
+```bash
+glplugin doctor 192.168.8.1
+printf '%s\n' "$ROUTER_PASSWORD" | glplugin doctor 192.168.8.1 --password-stdin --json
+```
+
+The CLI negotiates `challenge.alg` instead of assuming MD5 crypt. Algorithms `1` (MD5 crypt), `5` (SHA-256 crypt), and `6` (SHA-512 crypt) are supported because all three are implemented by the official 4.8.1 and 4.9.0 UI bundles. Unknown algorithms fail explicitly.
+
+HTTP remains the default for local router access. For HTTPS, certificate verification is enabled by default:
+
+```bash
+glplugin doctor router.local --https
+glplugin doctor router.local --https --insecure # explicit opt-out for a self-signed certificate
+```
+
+`doctor` calls only read methods. Missing optional modules are reported as unavailable or not supported; they do not make the core router check fail.
 
 ## Plugin Structure
 
@@ -68,6 +94,7 @@ ssh root@192.168.8.1 "opkg remove gl-sdk4-ui-my-plugin"
 my-plugin/
 ├── src/
 │   └── index.vue          # Your Vue component
+├── i18n/                  # Plugin translations
 ├── menu.json              # Menu entry definition
 ├── webpack.config.js      # Build config (pre-configured)
 ├── package.json
@@ -77,15 +104,16 @@ my-plugin/
 
 ## Writing Plugins
 
-Your plugin is a standard Vue 2 single-file component. Add a `rpc()` helper for safe API calls:
+Your plugin is a standard Vue 2 single-file component. RPC failures reject normally, so handle them explicitly:
 
 ```vue
 <template>
   <div>
     <gl-title :title="'My Plugin'" />
     <gl-card>
-      <p>{{ model }} — {{ uptime }}</p>
-      <gl-btn type="primary" @click="fetchData">Refresh</gl-btn>
+      <p>{{ model }} - {{ uptime }}</p>
+      <p v-if="error">{{ error }}</p>
+      <gl-button type="primary" @click="fetchData">Refresh</gl-button>
     </gl-card>
   </div>
 </template>
@@ -94,23 +122,22 @@ Your plugin is a standard Vue 2 single-file component. Add a `rpc()` helper for 
 export default {
   name: 'my-plugin',
   data() {
-    return { model: '', uptime: '' };
+    return { model: '', uptime: '', error: '' };
   },
   created() {
     this.fetchData();
   },
   methods: {
-    rpc(module, func, params) {
-      return this.$rpcRequest('call', ['sid', module, func, params || {}])
-        .then(r => r).catch(() => null);
-    },
     async fetchData() {
-      const info = await this.rpc('system', 'get_info');
-      const status = await this.rpc('system', 'get_status');
-      if (info) this.model = info.board_info.model;
-      if (status) {
+      this.error = '';
+      try {
+        const info = await this.$rpcRequest('call', ['sid', 'system', 'get_info', {}]);
+        const status = await this.$rpcRequest('call', ['sid', 'system', 'get_status', {}]);
+        this.model = info.board_info.model;
         const s = status.system.uptime;
         this.uptime = Math.floor(s/3600) + 'h ' + Math.floor(s%3600/60) + 'm';
+      } catch (error) {
+        this.error = error.message || 'RPC request failed';
       }
     },
   },
@@ -127,7 +154,7 @@ p { color: var(--text-color); }
 Control your router from scripts without SSH:
 
 ```bash
-# Install locally in your project (NOT global — global install won't resolve lib/ imports)
+# After the npm release, install locally so lib/ imports resolve
 npm install gl-sdk4-plugin-kit
 ```
 
@@ -155,15 +182,16 @@ await client.rpc('vpn-client', 'set_tunnel', tunnels.tunnels[0]); // re-enable
 
 ## Vue API Mixin
 
-> **Note:** Plugins are webpack-bundled independently and cannot `require()` from
-> the toolkit at runtime. The mixin code must be **copied into your plugin** or
-> inlined. See [lib/api.js](lib/api.js) for the source. The simpler `rpc()` helper
-> shown in the Writing Plugins section above is the recommended approach.
+The toolkit can be installed or linked as a build-time dependency. Webpack includes
+the API factory and catalog in the plugin bundle, so the router does not need the
+Node package at runtime. Until the npm release, run `npm link gl-sdk4-plugin-kit`
+inside the generated plugin before importing it.
 
-For reference, the full mixin provides 46 namespaces with ~300 methods:
+For reference, the full mixin provides 49 namespaces with 326 methods. Calls preserve RPC rejections instead of converting failures to `null`:
 
 ```js
-// Copy createGlApi() and glApiMixin from lib/api.js into your plugin, then:
+const { glApiMixin } = require('gl-sdk4-plugin-kit/lib/api');
+
 export default {
   mixins: [glApiMixin],
   async created() {
@@ -173,19 +201,38 @@ export default {
 };
 ```
 
+## Package Configuration
+
+Generated projects expose portable OpenWrt metadata through `package.json`:
+
+```json
+{
+  "pluginName": "my-plugin",
+  "glPlugin": {
+    "architecture": "all",
+    "depends": ["libc", "gl-sdk4-ui-core"],
+    "section": "base"
+  }
+}
+```
+
+`glplugin package` also writes `Installed-Size`, `SourceName`, and the standard OpenWrt lifecycle scripts. Menu files are package-owned and are not marked as `conffiles`.
+
 ## Documentation
 
 - [Components Reference](docs/components.md) — All 49 built-in `gl-*` Vue components
 - [API Reference](docs/api.md) — RPC calls and backend communication
+- [Firmware Compatibility](docs/compatibility.md) - inspected firmware artifacts, auth contract, and doctor behavior
 - [Menu Format](docs/menu.md) — How to define menu entries
 - [Theme Variables](docs/theme.md) — CSS variables for native look and feel
-- [Complete API Methods](docs/api-methods.md) — 302 RPC methods discovered, ~295 confirmed working
-- [Type Definitions](lib/types.js) — JSDoc types for all API responses (IDE autocomplete)
-- [Write Methods — VPN](docs/write-methods-vpn.md) — 38 VPN write method parameters
-- [Write Methods — Network](docs/write-methods-network.md) — 34 network/firewall write method parameters
-- [Write Methods — System](docs/write-methods-system.md) — 42 system/service write method parameters
-- [Vue API Mixin](lib/api.js) — Typed API with 44 namespaces for Vue plugins
-- [Node.js Client](lib/api-client.js) — Standalone API client with auth
+- [Extracted API Methods](docs/api-methods.md) - 302 methods found in the inspected firmware bundle
+- [Runtime API Catalog](lib/api-catalog.js) - 49 namespaces and 326 callable method mappings
+- [Type Definitions](lib/types.js) - JSDoc response and parameter types
+- [Write Methods - VPN](docs/write-methods-vpn.md) - VPN write method parameters
+- [Write Methods - Network](docs/write-methods-network.md) - Network and firewall parameters
+- [Write Methods - System](docs/write-methods-system.md) - System and service parameters
+- [Vue API Mixin](lib/api.js) - Browser API generated from the shared catalog
+- [Node.js Client](lib/api-client.js) - Standalone API generated from the same catalog
 
 ## Examples
 
@@ -206,11 +253,12 @@ glplugin extract root@192.168.8.1
 
 This SSHs into the router, downloads `app.js`, and extracts all component names, CSS variables, icons, and RPC methods into `extracted-components.json`.
 
-## Tested On
+## Compatibility Status
 
-- GL-MT3000 (Beryl AX) — Firmware 4.8.1
+- GL-MT3000 (Beryl AX), firmware 4.8.1 release: official root filesystem and UI auth flow inspected; previously tested live
+- GL-MT3000 (Beryl AX), firmware 4.9.0 beta6: official root filesystem, UI auth flow, and RPC modules inspected; not yet tested on a live router
 
-Should work on any GL.iNet router running firmware 4.x with the same UI framework.
+The package layout is also checked against official SDK4 UI packages. Compatibility is capability-based rather than tied to MT3000, but other models and firmware versions still require explicit live testing. See [the compatibility notes](docs/compatibility.md) for exact evidence and limits.
 
 ## Disclaimer
 

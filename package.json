@@ -2,9 +2,20 @@
   "name": "gl-sdk4-plugin-kit",
   "version": "0.1.0",
   "description": "Unofficial toolkit for building native GL.iNet router admin panel plugins",
-  "keywords": ["gl-inet", "openwrt", "router", "plugin", "sdk4", "vue"],
-  "author": "",
+  "keywords": [
+    "gl-inet",
+    "openwrt",
+    "router",
+    "plugin",
+    "sdk4",
+    "vue"
+  ],
+  "author": "go-wombat",
   "license": "MIT",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "prepack": "npm test"
+  },
   "bin": {
     "glplugin": "./bin/glplugin"
   },
@@ -15,10 +26,25 @@
     "docs/"
   ],
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.17.0"
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "git+https://github.com/go-wombat/gl-sdk4-plugin-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/go-wombat/gl-sdk4-plugin-kit/issues"
+  },
+  "homepage": "https://github.com/go-wombat/gl-sdk4-plugin-kit#readme",
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@babel/preset-env": "^7.24.0",
+    "babel-loader": "^9.1.3",
+    "css-loader": "^6.10.0",
+    "vue-loader": "^15.11.1",
+    "vue-style-loader": "^4.1.3",
+    "vue-template-compiler": "^2.7.16",
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4"
   }
 }

@@ -2,14 +2,12 @@ const path = require('path');
 const { VueLoaderPlugin } = require('vue-loader');
 const pkg = require('./package.json');
 
-const pluginName = pkg.pluginName || path.basename(process.cwd());
-
 module.exports = {
   mode: 'production',
   entry: './src/index.vue',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: `gl-sdk4-ui-${pluginName}.common.js`,
+    filename: `gl-sdk4-ui-${pkg.pluginName}.common.js`,
     libraryTarget: 'commonjs2',
     libraryExport: 'default',
   },

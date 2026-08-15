@@ -1,0 +1,44 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const { spawnSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const test = require('node:test');
+const { run } = require('./helpers');
+
+const root = path.resolve(__dirname, '..');
+
+function javascriptFiles(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(function(entry) {
+    const file = path.join(dir, entry.name);
+    if (entry.isDirectory()) return javascriptFiles(file);
+    return entry.isFile() && (entry.name.endsWith('.js') || file === path.join(root, 'bin', 'glplugin'))
+      ? [file]
+      : [];
+  });
+}
+
+test('all shipped JavaScript parses and runtime type definitions load', function() {
+  const files = ['bin', 'lib', 'scripts', 'template'].flatMap(function(dir) {
+    return javascriptFiles(path.join(root, dir));
+  });
+  files.forEach(function(file) {
+    const result = run(process.execPath, ['--check', file]);
+    assert.equal(result.stderr, '');
+  });
+  assert.deepEqual(require('../lib/types'), {});
+});
+
+test('CLI exposes its version and reports validation errors without a stack trace', function() {
+  const cli = path.join(root, 'bin', 'glplugin');
+  const pkg = require('../package.json');
+  const version = spawnSync(process.execPath, [cli, '--version'], { encoding: 'utf8' });
+  assert.equal(version.status, 0);
+  assert.equal(version.stdout.trim(), pkg.version);
+
+  const invalid = spawnSync(process.execPath, [cli, 'init', '---'], { encoding: 'utf8' });
+  assert.equal(invalid.status, 1);
+  assert.match(invalid.stderr, /^Error: Plugin name must contain/m);
+  assert.doesNotMatch(invalid.stderr, /\n\s+at /);
+});

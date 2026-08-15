@@ -1,118 +1,49 @@
-# TODO
+# Roadmap
 
-## API Documentation (from full extraction — 302 methods)
+## Toolkit stabilization
 
-### Write methods — document parameter structures (86 methods)
-- [ ] `wifi.set_config` — SSID, password, channel, encryption, hidden, txpower per band
-- [ ] `wifi.set_txpower` — power level per band
-- [ ] `wifi.set_mlo_config` — Wi-Fi 7 MLO settings
-- [ ] `vpn-client.add_tunnel` — tunnel name, via, from/to rules, killswitch
-- [ ] `vpn-client.set_tunnel` — modify existing tunnel
-- [ ] `vpn-client.remove_tunnel` — tunnel_id
-- [ ] `vpn-client.set_default_tunnel` — default tunnel selection
-- [ ] `vpn-client.set_global_mode` — VPN policy mode (global/per-device/per-domain)
-- [ ] `vpn-client.set_options` — VPN options
-- [ ] `vpn-client.set_tap_s2s` — site-to-site config
-- [ ] `vpn-client.set_single_mac` — per-device VPN policy
-- [ ] `vpn-client.start_random_client` — start random VPN
-- [ ] `vpn-client.stop` — stop VPN
-- [ ] `wg-client.add_config` — WireGuard config (endpoint, keys, allowed_ips, dns)
-- [ ] `wg-client.set_config` — modify WG config
-- [ ] `wg-client.remove_config` — remove config
-- [ ] `wg-client.add_group` — group_name, auth_type
-- [ ] `wg-client.set_group` — modify group
-- [ ] `wg-client.remove_group` — remove group
-- [ ] `wg-client.clear_config_list` — clear all in group
-- [ ] `wg-server.set_config` — port, address_v4, address_v6
-- [ ] `wg-server.set_setting` — client_to_client, masq, local_access
-- [ ] `wg-server.add_peer` — name, allowed_ips
-- [ ] `wg-server.set_peer` — modify peer
-- [ ] `wg-server.remove_peer` — peer_id
-- [ ] `wg-server.start` / `wg-server.stop`
-- [ ] `ovpn-client.add_config` / `set_config` / `remove_config`
-- [ ] `ovpn-client.add_group` / `set_group` / `remove_group`
-- [ ] `ovpn-server.set_config` — port, proto, subnet, lzo
-- [ ] `ovpn-server.set_setting` — local_access, masq
-- [ ] `ovpn-server.add_user` / `remove_user`
-- [ ] `ovpn-server.generate_certificate`
-- [ ] `firewall.add_port_forward` — name, proto, dest, dest_ip, dest_port, src, src_dport, enabled
-- [ ] `firewall.set_port_forward` / `remove_port_forward` / `order_port_forward`
-- [ ] `firewall.add_rule` / `set_rule` / `remove_rule`
-- [ ] `firewall.set_dmz` — dest_ip, enabled
-- [ ] `firewall.set_wan_access` — enable_https, enable_ping, enable_ssh, whitelist
-- [ ] `dns.set_config` — mode, force_dns, rebind_protection, override_vpn, dns1-4, server, proxy_address, dot_provider
-- [ ] `dns.set_host` — custom /etc/hosts entries
-- [ ] `lan.set_config` — ip, netmask, ap_isolate, wan_isolate
-- [ ] `lan.add_static_bind` / `set_static_bind` / `remove_static_bind`
-- [ ] `network.set_advance_config` — nat_enable, sip_enable
-- [ ] `network.set_netnat_config` — enable, actype
-- [ ] `netmode.set_mode` — router/ap/bridge/mesh/passthrough
-- [ ] `cable.set_config` — WAN protocol (DHCP/static/PPPoE)
-- [ ] `cable.set_port_config` — port mode (WAN/LAN)
-- [ ] `repeater.connect` — ssid, bssid, key, encryption
-- [ ] `repeater.disconnect`
-- [ ] `repeater.set_config` — auto, macaddr
-- [ ] `repeater.remove_saved_ap` — ssid/bssid
-- [ ] `tethering.set_connect` / `disconnect`
-- [ ] `tailscale.set_config` — enabled, lan_enabled, wan_enabled, exit_node_ip
-- [ ] `tailscale.logout`
-- [ ] `zerotier.set_config` — enabled, wan_enabled, lan_enabled
-- [ ] `tor.set_config` — enable, countries, manual
-- [ ] `adguardhome.set_config` — enabled, dns_enabled
-- [ ] `ddns.set_config` — enable_ddns
-- [ ] `cloud.set_config` — cloud_enable, rtty_web, rtty_ssh
-- [ ] `cloud.unbind`
-- [ ] `system.set_password` — old_password, new_password, username
-- [ ] `system.set_timezone_config` — zonename, timezone
-- [ ] `system.set_usb3_disable` — usb3_disable
-- [ ] `system.reboot` — delay
-- [ ] `system.reset_firmware`
-- [ ] `local-access.set_config` — ssh_enabled, ssh_port, http_port, https_port, redirect_https, session_timeout
-- [ ] `led.set_config` — enabled
-- [ ] `fan.set_config` — temperature threshold
-- [ ] `timer.set_led` / `set_reboot` / `set_wifi` / `set_screen` — enable, turnon, turnoff, week
-- [ ] `switch-button.set_config` — function assignment
-- [ ] `igmp.set_config` — enable, version
-- [ ] `ipv6.set_ipv6` — enable, lan_mode, lan_dns_mode
-- [ ] `qos.set_speed_limit_rule` — mac, upload, download
-- [ ] `qos.remove_speed_limit_rule` — mac
-- [ ] `rtty.set_config` — web_enabled, ssh_enabled
-- [ ] `parental-control.set_config` / `add_group` / `set_group` / `remove_group`
-- [ ] `parental-control.add_rule` / `set_rule` / `remove_rule`
-- [ ] `parental-control.set_mode` / `set_brief`
-- [ ] `plugins.install_package` — package name (timeout 180s)
-- [ ] `plugins.remove_package` — package name (timeout 180s)
-- [ ] `plugins.set_config` — sources
-- [ ] `plugins.update_repository` (timeout 180s)
-- [ ] `kmwan.set_config` / `set_interface` / `set_sensitivity`
-- [ ] `upgrade.set_config` — rc_upgrade, prompt
-- [ ] `upgrade.upgrade_online` / `upgrade_local`
-- [ ] `ui.set_lang` — language code
-- [ ] `black_white_list.set_config` / `set_single_mac`
-- [ ] `clients.set_info` — name per MAC
-- [ ] `clients.remove_offline` / `clean_traffic`
+- [x] Use `template/` as the only scaffold source
+- [x] Preserve valid hyphenated plugin IDs and reject empty names
+- [x] Validate all shipped JavaScript, including JSDoc type definitions
+- [x] Test `init -> build -> package -> inspect`
+- [x] Match the official SDK4 UI package paths and lifecycle scripts
+- [x] Support configurable `Depends`, `Architecture`, and `Section` metadata
+- [x] Generate browser and Node APIs from one RPC catalog
+- [x] Preserve RPC errors instead of returning ambiguous `null` values
+- [x] Run the test suite on Linux and macOS in GitHub Actions
 
-### Form structures to document (112 forms found)
-- [ ] Map each form to its corresponding write method
-- [ ] Document default values and validation rules
-- [ ] Add TypeScript/JSDoc types for write params
+## Release readiness
 
-### Live test remaining 8 failed methods
-- [ ] `mptun.get_token` — needs AstroWarp setup?
-- [ ] `modem.get_apn_poll_enabled` — needs modem connected
-- [ ] `mvas.get_connect_info` — needs multi-SIM setup
-- [ ] `logread.get_config` — unknown params needed
-- [ ] `bark.get_config` / `bark.get_status` — Bark parental control not installed?
-- [ ] `plugins.get_package_info` — needs package name param
-- [ ] `upgrade.check_cellular_online` — needs modem
+- [ ] Publish the first npm package
+- [ ] Add a changelog and release process
+- [ ] Add contributing and security policies
+- [x] Add sanitized auth fixtures from official 4.8.1 and 4.9.0 firmware contracts
+- [ ] Add sanitized API response fixtures from multiple models
 
-## Features
-- [ ] `glplugin package` — test .ipk install/uninstall on live router
-- [ ] Add `--password` flag to deploy (use auth.js instead of SSH)
-- [ ] Generate TypeScript `.d.ts` from full-api-reference.json
-- [ ] Example plugin: Wi-Fi scanner with `repeater.scan`
-- [ ] Example plugin: Client monitor with `clients.get_list`
-- [ ] Example plugin: Firewall manager with `firewall.*`
-- [ ] CI: GitHub Actions to run `glplugin test` on mock data
-- [ ] Screenshots of working plugins for README
-- [ ] Publish to npm
+## Full-stack packages
+
+- [ ] Define `ui-only` and `full-stack` package profiles
+- [ ] Add a router filesystem overlay to generated packages
+- [ ] Support backend package dependencies and custom lifecycle hooks
+- [ ] Use Airbnb Radar as the full-stack reference plugin
+
+## Firmware compatibility
+
+- [x] Add `glplugin doctor` for model, firmware, and capability detection
+- [ ] Version extracted API catalogs by model and firmware
+- [x] Make doctor RPC checks feature-gated instead of treating optional modules as failures
+- [ ] Build and publish a tested compatibility matrix
+
+## API and types
+
+- [ ] Generate `.d.ts` declarations from the shared RPC catalog and response fixtures
+- [ ] Generate API documentation and test cases from the same catalog
+- [ ] Map extracted form validation to write-method parameter types
+- [ ] Document unverified and feature-gated methods explicitly
+
+## CLI security
+
+- [x] Negotiate authentication from `challenge.alg` across supported firmware versions
+- [x] Remove passwords from command-line arguments
+- [x] Add a hidden password prompt and `--password-stdin`
+- [ ] Replace remaining SSH shell interpolation with argument-based process execution
