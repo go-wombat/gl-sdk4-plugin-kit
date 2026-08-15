@@ -21,8 +21,8 @@ jobs:
             node: 22
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -46,11 +46,11 @@ jobs:
             sha256: 0342114922db0b5e98750a8414eeb23849ce1b8f30f85c46d6d11d69a070bcef
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: .cache/firmware
           key: gl-firmware-${{ matrix.id }}-${{ matrix.sha256 }}

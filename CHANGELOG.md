@@ -27,6 +27,7 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
   to the installed view and Vue export.
 - Generated manifests and package metadata declare their firmware/runtime
   requirements.
+- CI actions run on their supported Node 24 runtime.
 
 ### Validation
 
