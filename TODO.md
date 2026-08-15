@@ -46,4 +46,5 @@
 - [x] Negotiate authentication from `challenge.alg` across supported firmware versions
 - [x] Remove passwords from command-line arguments
 - [x] Add a hidden password prompt and `--password-stdin`
-- [ ] Replace remaining SSH shell interpolation with argument-based process execution
+- [x] Replace remaining SSH shell interpolation with argument-based process execution
+- [ ] Reuse one authenticated SSH connection across multi-step deploy and extract commands

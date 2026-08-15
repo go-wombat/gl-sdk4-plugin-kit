@@ -61,11 +61,11 @@ ssh root@192.168.8.1 "opkg remove gl-sdk4-ui-my-plugin"
 | `glplugin init <name> [--profile ui-only\|full-stack]` | Scaffold a UI-only or full-stack plugin project |
 | `glplugin build` | Build plugin (webpack + gzip) |
 | `glplugin package` | Create `.ipk` package (installable via opkg, survives reboots) |
-| `glplugin deploy <host>` | Deploy UI assets to a router via SCP for development |
+| `glplugin deploy <host> [--insecure-host-key]` | Deploy UI assets to a router via SCP for development |
 | `glplugin test <host>` | Test plugin and API connectivity against live router |
 | `glplugin doctor <host>` | Detect model, firmware, auth algorithm, and read-only capabilities |
-| `glplugin extract <host>` | Extract components via SSH |
-| `glplugin extract <ip> --rpc` | Discover API endpoints via RPC (no SSH needed) |
+| `glplugin extract <host> [--insecure-host-key]` | Extract components via SSH |
+| `glplugin extract <ip> --rpc [--password-stdin] [--include-sensitive]` | Discover API endpoints via RPC (no SSH needed) |
 | `glplugin extract <host> --full` | Both SSH + RPC extraction |
 | `glplugin help` | Show help |
 
@@ -90,6 +90,11 @@ glplugin doctor router.local --https --insecure # explicit opt-out for a self-si
 ```
 
 `doctor` calls only read methods. Missing optional modules are reported as unavailable or not supported; they do not make the core router check fail.
+
+SSH commands use argument arrays without a local shell. New host keys are accepted
+once and then checked on later connections. `--insecure-host-key` disables this
+verification explicitly; use it only for disposable development routers whose host
+key cannot be persisted.
 
 ## Plugin Structure
 
@@ -248,6 +253,7 @@ contract and the firmware evidence behind hook dispatch.
 - [API Reference](docs/api.md) — RPC calls and backend communication
 - [Firmware Compatibility](docs/compatibility.md) - inspected firmware artifacts, auth contract, and doctor behavior
 - [Package Manifest and Profiles](docs/packaging.md) - UI/full-stack packaging, overlays, conffiles, and lifecycle hooks
+- [CLI Security](docs/cli-security.md) - Authentication, SSH host keys, and extraction redaction
 - [Menu Format](docs/menu.md) — How to define menu entries
 - [Theme Variables](docs/theme.md) — CSS variables for native look and feel
 - [Extracted API Methods](docs/api-methods.md) - 302 methods found in the inspected firmware bundle
@@ -274,9 +280,15 @@ If you're running a different firmware version, extract fresh component data:
 
 ```bash
 glplugin extract root@192.168.8.1
+glplugin extract 192.168.8.1 --rpc
 ```
 
 This SSHs into the router, downloads `app.js`, and extracts all component names, CSS variables, icons, and RPC methods into `extracted-components.json`.
+
+RPC extraction also records successful method response shapes. Fields that can hold
+passwords, tokens, or private keys are replaced with `<redacted>` by default. Use
+`--include-sensitive` only when raw local output is required, and never commit or
+share that output.
 
 ## Compatibility Status
 
@@ -291,7 +303,7 @@ This is an unofficial, community-driven project. It is not affiliated with, endo
 
 ## Contributing
 
-Contributions welcome! If you've tested on a different model or firmware version, please open a PR with your `extracted-components.json`.
+Contributions welcome! If you've tested on a different model or firmware version, please open a PR with a manually reviewed, redacted `extracted-components.json`.
 
 ## License
 
