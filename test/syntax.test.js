@@ -27,7 +27,7 @@ function schemaPatterns(value, result) {
 }
 
 test('all shipped JavaScript parses and runtime type definitions load', function() {
-  const files = ['bin', 'lib', 'scripts', 'template'].flatMap(function(dir) {
+  const files = ['bin', 'lib', 'scripts', 'template', 'examples'].flatMap(function(dir) {
     return javascriptFiles(path.join(root, dir));
   });
   files.forEach(function(file) {

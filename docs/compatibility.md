@@ -25,12 +25,12 @@ lifecycle dispatch.
 
 ## Verified Matrix
 
-| Model | Firmware | Channel | OpenWrt base | Package architecture | Validation |
+| Model | Firmware | OpenWrt base | Package architecture | Component evidence | Validation |
 |---|---|---|---|---|---|
-| GL-MT3000 | 4.8.1 `release8` | release | 21.02 snapshot | `aarch64_cortex-a53` | Live supported |
-| GL-AXT1800 | 4.8.3 `release1` | release | 23.05 snapshot | `aarch64_cortex-a53_neon-vfpv4` | Artifact verified |
-| GL-SFT1200 | 4.8.3 `release4` | release | LEDE/18.06 | `mips_siflower` | Artifact verified |
-| GL-MT6000 | 4.9.1 `release1` | release | 21.02 snapshot | `aarch64_cortex-a53` | Artifact verified |
+| GL-MT3000 | 4.8.1 `release8` | 21.02 snapshot | `aarch64_cortex-a53` | Runtime registry | Live supported |
+| GL-AXT1800 | 4.8.3 `release1` | 23.05 snapshot | `aarch64_cortex-a53_neon-vfpv4` | Static signals only | Artifact verified |
+| GL-SFT1200 | 4.8.3 `release4` | LEDE/18.06 | `mips_siflower` | Static signals only | Artifact verified |
+| GL-MT6000 | 4.9.1 `release1` | 21.02 snapshot | `aarch64_cortex-a53` | Static signals only | Artifact verified |
 
 The catalog stores the official download URL, complete firmware SHA-256,
 SquashFS root location, decompressed app bundle SHA-256, OpenWrt base, and
@@ -43,6 +43,10 @@ package architecture. Firmware metadata comes from the official endpoints:
 
 No firmware image or extracted vendor bundle is committed to this repository.
 
+`artifact-verified` does not by itself satisfy a project's `requiredComponents`.
+The AXT1800, SFT1200, and MT6000 rows remain blocked for generated projects until
+their exact bundle fingerprints also have a runtime component-registry capture.
+
 ## Modern Runtime Contract
 
 The `sdk4-modern-v1` contract requires all of the following:
@@ -50,8 +54,8 @@ The `sdk4-modern-v1` contract requires all of the following:
 - the admin loader requests `/views/gl-sdk4-ui-<view>.common.js` and evaluates
   the returned component;
 - `Vue.prototype.$rpcRequest` is registered;
-- the portable components `gl-button`, `gl-card`, `gl-line-chart`, `gl-tips`,
-  and `gl-title` are globally registered;
+- required portable components are present in a fingerprint-bound runtime capture
+  of `Vue.options.components`; static registration strings are diagnostics only;
 - login uses Unix crypt selected by `challenge.alg`, followed by the modern
   SHA-256 outer hash through `$getHash`;
 - `/www/views` and `/usr/share/oui/menu.d` exist;
@@ -100,18 +104,20 @@ For an unknown modern tuple, preserve and locally validate the minimum evidence:
 ```bash
 glplugin doctor router.local --allow-unverified --json > doctor.json
 glplugin compatibility capture doctor.json --output candidate.json
-glplugin compatibility verify candidate.json
+glplugin compatibility verify candidate.json --bundle admin-app.js.gz
 ```
 
 The candidate retains the canonical model, normalized firmware, release type,
 architecture, OpenWrt version, runtime contract, decompressed app bundle SHA-256,
-and portable components. It omits the router address, hostname, auth metadata,
+and static component signals. It omits the router address, hostname, auth metadata,
 capability responses, and admin bundle path.
 
-Verification returns `ready-for-review` for a complete unknown tuple and
+Verification recomputes evidence from the supplied bundle and returns
+`ready-for-review` for a complete unknown tuple and
 `already-supported` for an exact catalog match. Neither result edits the catalog.
-Official artifact metadata and contract verification are still required before an
-entry becomes `artifact-verified`; a live plugin cycle is still required for
+It does not turn static strings into runtime component evidence. Official artifact
+metadata and contract verification are still required before an entry becomes
+`artifact-verified`; a runtime registry capture and live plugin cycle are required for
 `live-supported`.
 
 `glplugin install` and `glplugin deploy` perform an SSH platform preflight before
@@ -130,7 +136,8 @@ skip.
 
 The `firmware-contract` GitHub Actions matrix downloads each official release,
 verifies the published firmware SHA-256, extracts only the required SquashFS
-files, and proves the complete `sdk4-modern-v1` contract. A vendor firmware
+files, and proves the artifact-visible parts of `sdk4-modern-v1`. Runtime component
+claims are accepted only from a separate fingerprint-bound registry capture. A vendor firmware
 change therefore fails CI before its fingerprint can be marked verified.
 
 Run one entry locally with:
@@ -163,8 +170,9 @@ compatibility output.
 - Full-stack dependency availability remains project-specific. `opkg` is the
   authority for packages declared in `Depends`; native overlays must use the
   correct target architecture rather than `all`.
-- Artifact verification proves the filesystem, package, auth, loader, and
-  portable UI contracts. Hardware-specific RPC behavior still requires a live
+- Artifact verification proves the filesystem, package, auth, loader, RPC, and
+  static component-signal contracts. Global component registration and
+  hardware-specific RPC behavior still require live
   capability test when a plugin depends on it.
 - Preservation of third-party packages across vendor firmware upgrades remains
   firmware-upgrade behavior, not an installation guarantee from this toolkit.

@@ -11,6 +11,7 @@ const {
   parseFirmwareVersion,
 } = require('../lib/compatibility');
 const { FIRMWARE_CATALOG } = require('../lib/firmware-catalog');
+const { firmwareMatrix } = require('../scripts/firmware-matrix');
 const {
   assertPlatformCompatibility,
   findAdminBundlePath,
@@ -26,6 +27,7 @@ function modernAnalysis(bundleSha256) {
     bundleSha256,
     contracts: { viewLoader: true, rpcRequest: true },
     portableComponents: ['gl-card', 'gl-title'],
+    componentEvidence: 'runtime-vue-options-components',
   };
 }
 
@@ -80,7 +82,7 @@ test('known modern bundles are accepted while old and unknown bundles are not', 
   assert.equal(unknown.status, 'unverified');
 });
 
-test('admin bundle analysis proves loader, RPC, and portable component contracts', function() {
+test('admin bundle analysis keeps static registrations separate from runtime evidence', function() {
   const source = [
     'Vue.prototype.$rpcRequest=function(){};',
     'Vue.component("gl-card",Card);Vue.component("gl-title",Title);',
@@ -88,8 +90,28 @@ test('admin bundle analysis proves loader, RPC, and portable component contracts
   ].join('');
   const analysis = analyzeAdminBundle(zlib.gzipSync(source));
   assert.deepEqual(analysis.contracts, { viewLoader: true, rpcRequest: true });
-  assert.deepEqual(analysis.portableComponents, ['gl-card', 'gl-title']);
+  assert.deepEqual(analysis.portableComponents, []);
+  assert.deepEqual(analysis.staticPortableComponents, ['gl-card', 'gl-title']);
+  assert.equal(analysis.componentEvidence, 'unverified-static-signals');
   assert.equal(analysis.bundleSha256.length, 64);
+});
+
+test('required components need runtime registry evidence', function() {
+  const result = evaluateCompatibility({
+    analysis: {
+      bundleSha256: KNOWN_BUNDLE,
+      contracts: { viewLoader: true, rpcRequest: true },
+      portableComponents: [],
+      staticPortableComponents: ['gl-card'],
+      componentEvidence: 'unverified-static-signals',
+    },
+    firmwareVersion: '4.8.1',
+    model: 'GL-MT3000',
+    requiredComponents: ['gl-card'],
+  });
+  assert.equal(result.compatible, false);
+  assert.equal(result.status, 'incompatible');
+  assert.match(result.reason, /runtime registry evidence/);
 });
 
 test('strict preflight blocks unknown bundles unless the override is explicit', function() {
@@ -176,7 +198,8 @@ test('SSH platform inspection maps the public app URL to the /www filesystem', f
   });
   assert.equal(report.errors.length, 0);
   assert.equal(report.analysis.contracts.rpcRequest, true);
-  assert.equal(report.compatibility.status, 'unverified');
+  assert.equal(report.compatibility.status, 'incompatible');
+  assert.match(report.compatibility.reason, /runtime registry evidence/);
   assert.equal(commands.includes('cat /www/js/app.fixture.js.gz'), true);
 });
 
@@ -219,8 +242,22 @@ test('official firmware catalog contains unique modern release fingerprints', fu
     assert.notEqual(compareFirmwareVersions(entry.firmware, MINIMUM_FIRMWARE), -1);
     assert.match(entry.artifact.url, /^https:\/\/fw\.gl-inet\.com\/firmware\//);
     assert.match(entry.artifact.sha256, /^[a-f0-9]{64}$/);
-    assert.deepEqual(entry.portableComponents, [
-      'gl-button', 'gl-card', 'gl-line-chart', 'gl-tips', 'gl-title',
-    ]);
+    assert.equal(Array.isArray(entry.portableComponents), true);
+    assert.equal(Array.isArray(entry.staticPortableComponents), true);
   });
+});
+
+test('firmware CI matrix is generated from the runtime catalog', function() {
+  assert.deepEqual(firmwareMatrix(), {
+    include: FIRMWARE_CATALOG.map((entry) => ({
+      id: entry.id,
+      sha256: entry.artifact.sha256,
+    })),
+  });
+  const workflow = require('fs').readFileSync(
+    require('path').resolve(__dirname, '..', '.github', 'workflows', 'ci.yml'),
+    'utf8'
+  );
+  assert.match(workflow, /node scripts\/firmware-matrix\.js/);
+  FIRMWARE_CATALOG.forEach((entry) => assert.doesNotMatch(workflow, new RegExp(entry.id)));
 });

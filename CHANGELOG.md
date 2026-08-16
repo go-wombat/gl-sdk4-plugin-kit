@@ -8,8 +8,20 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 ### Added
 
 - Experimental `glplugin compatibility capture` and `compatibility verify`
-  commands for reducing doctor JSON to a redacted, locally validated firmware
-  candidate without modifying the trusted catalog.
+  commands for reducing doctor JSON to a redacted candidate and validating it
+  against the actual admin bundle without modifying the trusted catalog.
+- Complete, buildable `hello-world` and `network-info` example projects.
+- An official GL.iNet Beryl AX product image identifying the live reference router.
+
+### Changed
+
+- Deploy records exact project-owned router assets and removes stale entries without
+  globbing across another plugin's namespace.
+- Dev mode refreshes its watcher set and repeats platform preflight after manifest
+  changes.
+- Firmware component claims now distinguish static bundle signals from
+  fingerprint-bound runtime `Vue.options.components` evidence.
+- The firmware CI matrix is generated directly from the runtime catalog.
 
 ## [0.6.0] - 2026-08-16
 

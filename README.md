@@ -2,6 +2,11 @@
 
 Unofficial toolkit for building native SDK4 admin panel plugins for GL.iNet routers.
 
+[![GL.iNet Beryl AX (GL-MT3000)](docs/assets/gl-mt3000-beryl-ax.jpg)](https://www.gl-inet.com/products/gl-mt3000/)
+
+Reference hardware used for live validation: **GL.iNet Beryl AX (GL-MT3000)**.
+Product photo source: [GL.iNet](https://www.gl-inet.com/products/gl-mt3000/).
+
 GL.iNet routers run an SDK4 Vue.js admin UI on top of OpenWrt. GL.iNet publishes firmware build tooling and prebuilt SDK4 packages, but no complete extension SDK for adding native admin pages. This project documents the package contract and automates building, testing, and deploying compatible plugins.
 
 ## How It Works
@@ -69,7 +74,7 @@ glplugin uninstall
 |---------|-------------|
 | `glplugin init <name> [--profile ui-only\|full-stack]` | Scaffold a UI-only or full-stack plugin project |
 | `glplugin view add\|list\|remove` | Manage the plugin's Vue pages and menu entries |
-| `glplugin compatibility capture\|verify` | Create and validate a redacted firmware candidate from doctor JSON |
+| `glplugin compatibility capture\|verify` | Capture redacted metadata and verify it against the matching admin bundle |
 | `glplugin check [--strict]` | Validate project files, hooks, and toolchain |
 | `glplugin capabilities` | List valid manifest capability IDs and read-only RPC probes |
 | `glplugin build` | Build plugin (webpack + gzip) |
@@ -348,8 +353,8 @@ share that output.
 - GL-MT6000 4.9.1 release: official artifact verified.
 
 GitHub Actions downloads these exact official images and verifies their published
-SHA-256, SquashFS package layout, auth/runtime contract, portable components,
-`opkg`, menu layout, and lifecycle dispatch. New bundle fingerprints remain
+SHA-256, SquashFS package layout, auth/runtime contract, static component signals,
+runtime registry snapshots where available, `opkg`, menu layout, and lifecycle dispatch. New bundle fingerprints remain
 blocked until added to the catalog. See [the compatibility notes](docs/compatibility.md)
 for the exact matrix and validation boundary.
 
@@ -358,12 +363,13 @@ To inspect a modern but unknown tuple without editing the catalog:
 ```bash
 glplugin doctor 192.168.8.1 --allow-unverified --json > doctor.json
 glplugin compatibility capture doctor.json
-glplugin compatibility verify compatibility-candidate.json
+glplugin compatibility verify compatibility-candidate.json --bundle admin-app.js.gz
 ```
 
 The candidate contains only normalized router/runtime evidence and omits the target,
 hostname, authentication data, capabilities, and raw RPC responses. A successful
-verification means `ready-for-review`, not supported; catalog changes and firmware
+verification means the candidate and supplied bundle agree and are `ready-for-review`,
+not supported; runtime registry capture, catalog changes, and firmware
 artifact verification remain manual.
 
 ## Disclaimer

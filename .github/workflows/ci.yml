@@ -30,20 +30,24 @@ jobs:
       - run: npm test
       - run: npm pack --dry-run
 
+  firmware-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.catalog.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - id: catalog
+        run: echo "matrix=$(node scripts/firmware-matrix.js)" >> "$GITHUB_OUTPUT"
+
   firmware-contract:
     name: Firmware contract (${{ matrix.id }})
+    needs: firmware-matrix
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - id: gl-mt3000-4.8.1-release
-            sha256: ee038ee0f399c1454cc660dd47811b44697f5304e0f61af145c7dca6817d0e5c
-          - id: gl-axt1800-4.8.3-release1
-            sha256: fdb284e1ac9886b7183b7a3bf1b2604603f757f41709d21949c0c4983e16ec5a
-          - id: gl-sft1200-4.8.3-release4
-            sha256: f84630b6b95f7558c0708672f739892b54acc3d78a4c92dae866faada9ff5e1f
-          - id: gl-mt6000-4.9.1-release1
-            sha256: 0342114922db0b5e98750a8414eeb23849ce1b8f30f85c46d6d11d69a070bcef
+      matrix: ${{ fromJSON(needs.firmware-matrix.outputs.matrix) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

@@ -23,6 +23,7 @@
     "bin/",
     "lib/",
     "template/",
+    "examples/",
     "docs/",
     "schema/",
     "CHANGELOG.md"

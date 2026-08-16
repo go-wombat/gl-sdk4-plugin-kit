@@ -91,30 +91,36 @@ test('manifest validates explicit multi-view declarations', function(t) {
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   manifest.views = [
     { id: 'multi-fixture', entry: 'src/index.vue', menu: 'menu.json' },
-    { id: 'multi-details', entry: 'src/details.vue', menu: 'menus/details.json' },
+    { id: 'multi-fixture-details', entry: 'src/details.vue', menu: 'menus/details.json' },
   ];
   writeJson(manifestFile, manifest);
   assert.deepEqual(
     readPluginProject(project.dir).manifest.views.map((view) => view.id),
-    ['multi-fixture', 'multi-details']
+    ['multi-fixture', 'multi-fixture-details']
   );
+
+  manifest.views[1].id = 'another-plugin';
+  writeJson(manifestFile, manifest);
+  assert.throws(() => readPluginProject(project.dir), /must be namespaced with "multi-fixture-"/);
 
   manifest.views[1].id = 'multi-fixture';
   writeJson(manifestFile, manifest);
   assert.throws(() => readPluginProject(project.dir), /Duplicate view ID/);
 
-  manifest.views[1].id = 'multi-details';
+  manifest.views[1].id = 'multi-fixture-details';
   manifest.views[1].menu = 'menu.json';
   writeJson(manifestFile, manifest);
   assert.throws(() => readPluginProject(project.dir), /Duplicate view menu path/);
 
-  manifest.views = [{ id: 'multi-details', entry: 'src/details.vue', menu: 'menus/details.json' }];
+  manifest.views = [{
+    id: 'multi-fixture-details', entry: 'src/details.vue', menu: 'menus/details.json',
+  }];
   writeJson(manifestFile, manifest);
   assert.throws(() => readPluginProject(project.dir), /must include the primary plugin ID/);
 
   manifest.views = [
     { id: 'multi-fixture', entry: 'src/index.vue', menu: 'menu.json' },
-    { id: 'multi-details', entry: '../outside.vue', menu: 'menus/details.json' },
+    { id: 'multi-fixture-details', entry: '../outside.vue', menu: 'menus/details.json' },
   ];
   writeJson(manifestFile, manifest);
   assert.throws(() => readPluginProject(project.dir), /must stay inside the plugin project/);

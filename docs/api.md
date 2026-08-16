@@ -23,8 +23,8 @@ this.$rpcRequest('call', ['sid', '<namespace>', '<method>', { ...params }])
 // Returns a Promise that resolves with the result object.
 
 // Examples
-const board = await this.$rpcRequest('call', ['sid', 'system', 'board', {}]);
-const info  = await this.$rpcRequest('call', ['sid', 'system', 'info', {}]);
+const info = await this.$rpcRequest('call', ['sid', 'system', 'get_info', {}]);
+const status = await this.$rpcRequest('call', ['sid', 'system', 'get_status', {}]);
 ```
 
 ### What happens under the hood
@@ -63,7 +63,7 @@ const response = await this.$axios.post('/rpc', {
   jsonrpc: '2.0',
   id: 1,
   method: 'call',
-  params: [this.$store.state.sid, 'system', 'board', {}]
+  params: [this.$store.state.sid, 'system', 'get_info', {}]
 });
 const result = response.data.result;
 ```
@@ -85,10 +85,14 @@ handling automatically. Use `$axios` only when you need full control.
 ```bash
 # 1. Get challenge
 curl -s http://ROUTER/rpc -d '{"jsonrpc":"2.0","id":1,"method":"challenge","params":{"username":"root"}}'
-# => { result: { alg: 1, salt: "XXXX", nonce: "YYYY" } }
+# => { result: { alg: 1|5|6, salt: "XXXX", nonce: "YYYY" } }
 
 # 2. Compute hash: sha256(username + ":" + crypt(password, "$alg$salt$") + ":" + nonce)
-CRYPTED=$(openssl passwd -1 -salt "$SALT" "$PASSWORD")
+# Parse ALG, SALT, and NONCE from the challenge JSON first.
+case "$ALG" in 1|5|6) ;; *) echo "Unsupported challenge.alg: $ALG" >&2; exit 1;; esac
+read -r -s -p 'Router password: ' PASSWORD; printf '\n'
+CRYPTED=$(printf '%s' "$PASSWORD" | openssl passwd "-$ALG" -salt "$SALT" -stdin)
+unset PASSWORD
 HASH=$(printf '%s' "root:${CRYPTED}:${NONCE}" | shasum -a 256 | cut -d' ' -f1)
 
 # 3. Login
@@ -390,7 +394,7 @@ this.$rpcRequest('call', ['sid', 'cable', 'get_status', {}])
 
 ```js
 try {
-  const data = await this.$rpcRequest('call', ['sid', 'system', 'info', {}]);
+  const data = await this.$rpcRequest('call', ['sid', 'system', 'get_info', {}]);
   this.systemInfo = data;
 } catch (err) {
   this.$message({ type: 'error', message: 'Failed to load system info.' });

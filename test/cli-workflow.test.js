@@ -12,6 +12,7 @@ const init = require('../lib/init');
 const { normalizeArchiveEntry } = require('../lib/inspect');
 const targetConfig = require('../lib/target-config');
 const { verifyRouter } = require('../lib/test');
+const view = require('../lib/view');
 const { installPlugin, uninstallPlugin } = require('../lib/workflow');
 const { compatiblePlatform, makeTempDir, removeTempDir } = require('./helpers');
 
@@ -208,7 +209,7 @@ test('dev performs an initial build/deploy and closes all watchers', function(t)
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   manifest.views = [
     { id: 'dev-fixture', entry: 'src/index.vue', menu: 'menu.json' },
-    { id: 'dev-details', entry: 'pages/details.vue', menu: 'navigation/details.json' },
+    { id: 'dev-fixture-details', entry: 'pages/details.vue', menu: 'navigation/details.json' },
   ];
   fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
   const watchers = [];
@@ -251,6 +252,44 @@ test('dev performs an initial build/deploy and closes all watchers', function(t)
   assert.equal(sessionCloses, 1);
 });
 
+test('dev refreshes watchers and repeats platform preflight after manifest changes', async function(t) {
+  const cwd = makeTempDir('glplugin-dev-refresh-');
+  t.after(() => removeTempDir(cwd));
+  const project = init('dev-refresh', { cwd, log() {} });
+  const watchers = new Map();
+  const deployOptions = [];
+  const controller = dev.startDev({
+    cwd: project.dir,
+    debounce: 5,
+    target: { ssh: 'root@router.local' },
+    signals: false,
+    log() {},
+    warn() {},
+    deployPlugin(args, options) { deployOptions.push(options); },
+    openSshSession() {
+      return { options: { controlPath: '/tmp/test-control-socket' }, close() {} };
+    },
+    watch(watchedPath, options, callback) {
+      const watcher = { callback, close() { watchers.delete(watchedPath); } };
+      watchers.set(watchedPath, watcher);
+      return watcher;
+    },
+  });
+
+  assert.equal(deployOptions[0].skipPlatformCheck, false);
+  view.addView(project.dir, { id: 'details', title: 'Details' });
+  watchers.get(project.dir).callback('change', 'gl-plugin.json');
+  await new Promise((resolve) => setTimeout(resolve, 30));
+
+  assert.equal(deployOptions[1].skipPlatformCheck, false);
+  assert.equal(watchers.has(path.join(project.dir, 'menus')), true);
+
+  watchers.get(path.join(project.dir, 'src')).callback('change', 'index.vue');
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  assert.equal(deployOptions[2].skipPlatformCheck, true);
+  controller.close();
+});
+
 test('router test reuses doctor capabilities and never exposes a session identifier', async function(t) {
   const cwd = makeTempDir('glplugin-router-test-');
   t.after(() => removeTempDir(cwd));
@@ -259,14 +298,14 @@ test('router test reuses doctor capabilities and never exposes a session identif
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   manifest.views = [
     { id: 'router-test-fixture', entry: 'src/index.vue', menu: 'menu.json' },
-    { id: 'router-test-details', entry: 'src/index.vue', menu: 'menu-details.json' },
+    { id: 'router-test-fixture-details', entry: 'src/index.vue', menu: 'menu-details.json' },
   ];
   fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
   const bundle = zlib.gzipSync('(function(){return {name:"fixture",render:function(){}}})()');
   const inspectRouter = async (host, password, inspectOptions) => {
     assert.deepEqual(
       inspectOptions.requiredMenuViews,
-      ['router-test-fixture', 'router-test-details']
+      ['router-test-fixture', 'router-test-fixture-details']
     );
     return {
       ok: true,
@@ -282,7 +321,7 @@ test('router test reuses doctor capabilities and never exposes a session identif
         menu_loaded: true,
         menu_views: [
           { view: 'router-test-fixture', loaded: true },
-          { view: 'router-test-details', loaded: true },
+          { view: 'router-test-fixture-details', loaded: true },
         ],
       },
       capabilities: [
@@ -304,8 +343,8 @@ test('router test reuses doctor capabilities and never exposes a session identif
   const report = await verifyRouter('router.local', 'private-password', options);
   assert.equal(report.ok, true);
   assert.equal(report.checks.find((item) => item.id === 'plugin-export').status, 'pass');
-  assert.equal(report.checks.find((item) => item.id === 'plugin-menu.router-test-details').status, 'pass');
-  assert.equal(report.checks.find((item) => item.id === 'plugin-export.router-test-details').status, 'pass');
+  assert.equal(report.checks.find((item) => item.id === 'plugin-menu.router-test-fixture-details').status, 'pass');
+  assert.equal(report.checks.find((item) => item.id === 'plugin-export.router-test-fixture-details').status, 'pass');
   assert.equal(report.capabilities.find((item) => item.id === 'dpi').testStatus, 'skip');
   assert.deepEqual(report.capabilitySummary, { available: 1, unavailable: 1 });
   assert.doesNotMatch(JSON.stringify(report), /private-password|sid|session/i);

@@ -87,13 +87,13 @@ test('deploy preflights inputs and uploads every asset through argument arrays',
     'bundle'
   );
   fs.writeFileSync(
-    path.join(project.dir, 'dist', 'gl-sdk4-ui-deploy-tools.common.js.gz'),
+    path.join(project.dir, 'dist', 'gl-sdk4-ui-deploy-fixture-tools.common.js.gz'),
     'tools bundle'
   );
   fs.mkdirSync(path.join(project.dir, 'menus'));
   fs.writeFileSync(path.join(project.dir, 'menus', 'tools.json'), JSON.stringify({
     index: 21,
-    view: 'deploy-tools',
+    view: 'deploy-fixture-tools',
     title: 'Tools',
     icon: 'setting',
     level: 1,
@@ -102,7 +102,7 @@ test('deploy preflights inputs and uploads every asset through argument arrays',
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   manifest.views = [
     { id: 'deploy-fixture', entry: 'src/index.vue', menu: 'menu.json' },
-    { id: 'deploy-tools', entry: 'src/index.vue', menu: 'menus/tools.json' },
+    { id: 'deploy-fixture-tools', entry: 'src/index.vue', menu: 'menus/tools.json' },
   ];
   fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
 
@@ -123,7 +123,7 @@ test('deploy preflights inputs and uploads every asset through argument arrays',
   assert.equal(result.compatibility.status, 'live-supported');
   assert.deepEqual(
     calls.map((call) => call.command),
-    ['ssh', 'scp', 'scp', 'scp', 'scp', 'ssh', 'scp', 'ssh']
+    ['ssh', 'ssh', 'scp', 'scp', 'scp', 'scp', 'ssh', 'scp', 'ssh', 'scp', 'ssh', 'ssh']
   );
   calls.forEach((call) => {
     assert.equal(call.options.shell, false);
@@ -148,6 +148,61 @@ test('deploy preflights inputs and uploads every asset through argument arrays',
     },
   }), /Unsafe remote filename/);
   assert.equal(unsafeCalls, 0);
+
+  fs.rmSync(path.join(project.dir, 'i18n', 'bad;touch.json'));
+  fs.writeFileSync(path.join(project.dir, 'i18n', 'core.en.json'), '{}\n');
+  assert.throws(() => deploy(['router.local'], {
+    cwd: project.dir,
+    log() {},
+    spawnSync() {
+      unsafeCalls += 1;
+      return successful();
+    },
+  }), /must start with "gl-sdk4-ui-deploy-fixture\."/);
+  assert.equal(unsafeCalls, 0);
+});
+
+test('deploy removes only stale assets recorded in its project inventory', function(t) {
+  const cwd = makeTempDir('glplugin-deploy-cleanup-');
+  t.after(() => removeTempDir(cwd));
+  const project = init('cleanup-fixture', { cwd, log() {} });
+  fs.mkdirSync(path.join(project.dir, 'dist'));
+  fs.writeFileSync(
+    path.join(project.dir, 'dist', 'gl-sdk4-ui-cleanup-fixture.common.js.gz'),
+    'bundle'
+  );
+  const stale = [
+    '/www/views/gl-sdk4-ui-cleanup-fixture-old.common.js.gz',
+    '/usr/share/oui/menu.d/cleanup-fixture-old.json',
+    '/www/i18n/gl-sdk4-ui-cleanup-fixture.fr.json',
+  ];
+  const hostile = '/www/views/gl-sdk4-ui-cleanup-fixture-old;reboot.common.js.gz';
+  const calls = [];
+  const spawnSync = (command, args, options) => {
+    calls.push({ command, args, options });
+    const remoteCommand = args.at(-1);
+    if (command === 'ssh' && /^cat .*deploy-state/.test(remoteCommand)) {
+      return successful(Buffer.from(stale.concat('/etc/passwd', hostile).join('\n') + '\n'));
+    }
+    return successful();
+  };
+
+  const result = deploy(['router.local'], {
+    cwd: project.dir,
+    inspectPlatform() { return compatiblePlatform(); },
+    log() {},
+    spawnSync,
+  });
+  const remoteCommands = calls
+    .filter((call) => call.command === 'ssh')
+    .map((call) => call.args.at(-1));
+  stale.forEach((file) => assert.equal(remoteCommands.includes(`rm -f ${file}`), true));
+  assert.equal(remoteCommands.includes('rm -f /etc/passwd'), false);
+  assert.equal(remoteCommands.includes(`rm -f ${hostile}`), false);
+  assert.deepEqual(result.removed, stale);
+  assert.equal(calls.some((call) => (
+    call.command === 'scp' && call.args.some((arg) => /deploy-state.*\.tmp-/.test(arg))
+  )), true);
 });
 
 test('SSH extraction analyzes a gzipped bundle and framed menu documents', function() {

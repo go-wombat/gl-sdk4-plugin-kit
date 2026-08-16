@@ -2,6 +2,7 @@
 
 const assert = require('node:assert/strict');
 const fs = require('fs');
+const crypto = require('crypto');
 const path = require('path');
 const test = require('node:test');
 const cli = require('../lib/cli');
@@ -37,7 +38,9 @@ function doctorReport(overrides) {
       firmware: '4.9.2',
       model: 'GL.iNet GL-BE9300',
       bundleSha256: 'a'.repeat(64),
-      portableComponents: PORTABLE_COMPONENTS,
+      portableComponents: [],
+      staticPortableComponents: PORTABLE_COMPONENTS,
+      componentEvidence: 'unverified-static-signals',
       source: 'http-admin-bundle',
       app_path: '/js/app.private.js',
     },
@@ -53,6 +56,20 @@ function doctorReport(overrides) {
       details: report,
     },
   };
+}
+
+function bundleFixture() {
+  return Buffer.from([
+    'Vue.prototype.$rpcRequest=function(){};',
+    ...PORTABLE_COMPONENTS.map((name) => `Vue.component("${name}",Component);`),
+    'fetch(`/views/gl-sdk4-ui-${view}.common.js`).then(res=>eval(res.data));',
+  ].join(''));
+}
+
+function candidateForBundle(bundle, report) {
+  const candidate = captureCandidate(report || doctorReport());
+  candidate.runtime.bundleSha256 = crypto.createHash('sha256').update(bundle).digest('hex');
+  return candidate;
 }
 
 function memoryStream() {
@@ -79,7 +96,8 @@ test('capture creates a minimal redacted candidate from failed doctor JSON', fun
     runtime: {
       contract: 'sdk4-modern-v1',
       bundleSha256: 'a'.repeat(64),
-      portableComponents: PORTABLE_COMPONENTS,
+      componentEvidence: 'unverified-static-signals',
+      staticPortableComponents: PORTABLE_COMPONENTS,
     },
     evidence: {
       source: 'http-admin-bundle',
@@ -94,8 +112,9 @@ test('capture creates a minimal redacted candidate from failed doctor JSON', fun
 });
 
 test('verify marks a complete unknown tuple ready for manual review', function() {
-  const candidate = captureCandidate(doctorReport());
-  const result = verifyCandidate(candidate);
+  const bundle = bundleFixture();
+  const candidate = candidateForBundle(bundle);
+  const result = verifyCandidate(candidate, { bundle });
 
   assert.equal(result.ready, true);
   assert.equal(result.status, 'ready-for-review');
@@ -105,7 +124,8 @@ test('verify marks a complete unknown tuple ready for manual review', function()
 });
 
 test('verify rejects incomplete or unsupported runtime evidence', function() {
-  const base = captureCandidate(doctorReport());
+  const bundle = bundleFixture();
+  const base = candidateForBundle(bundle);
   const cases = [
     {
       id: 'runtime-contract',
@@ -116,10 +136,10 @@ test('verify rejects incomplete or unsupported runtime evidence', function() {
       candidate: { ...base, runtime: { ...base.runtime, bundleSha256: 'not-a-sha' } },
     },
     {
-      id: 'portable-components',
+      id: 'static-portable-components',
       candidate: {
         ...base,
-        runtime: { ...base.runtime, portableComponents: ['gl-card', 'gl-title'] },
+        runtime: { ...base.runtime, staticPortableComponents: ['gl-card', 'gl-title'] },
       },
     },
     {
@@ -136,7 +156,7 @@ test('verify rejects incomplete or unsupported runtime evidence', function() {
   ];
 
   cases.forEach(({ id, candidate }) => {
-    const result = verifyCandidate(candidate);
+    const result = verifyCandidate(candidate, { bundle });
     assert.equal(result.ready, false, id);
     assert.equal(result.status, 'invalid', id);
     assert.equal(result.errors.some((error) => error.id === id), true, id);
@@ -156,10 +176,21 @@ test('verify recognizes an exact tuple already present in the firmware catalog',
     model: 'GL.iNet GL-MT3000',
     bundleSha256: '0409574b320a74de904a690df723134fc07471cddf5d622691ebbaa403116705',
     portableComponents: PORTABLE_COMPONENTS,
+    staticPortableComponents: PORTABLE_COMPONENTS,
+    componentEvidence: 'runtime-vue-options-components',
     source: 'http-admin-bundle',
   };
 
-  const result = verifyCandidate(captureCandidate(input));
+  const result = verifyCandidate(captureCandidate(input), {
+    bundle: Buffer.from('catalog fixture'),
+    analyzeAdminBundle() {
+      return {
+        bundleSha256: '0409574b320a74de904a690df723134fc07471cddf5d622691ebbaa403116705',
+        contracts: { viewLoader: true, rpcRequest: true },
+        staticPortableComponents: PORTABLE_COMPONENTS,
+      };
+    },
+  });
   assert.equal(result.ready, true);
   assert.equal(result.status, 'already-supported');
   assert.deepEqual(result.catalogMatch, {
@@ -173,7 +204,13 @@ test('compatibility CLI captures and verifies files with JSON output', async fun
   t.after(() => removeTempDir(cwd));
   const doctorFile = path.join(cwd, 'doctor.json');
   const candidateFile = path.join(cwd, 'candidate.json');
-  fs.writeFileSync(doctorFile, JSON.stringify(doctorReport(), null, 2) + '\n');
+  const bundle = bundleFixture();
+  const report = doctorReport();
+  report.error.details.compatibility.bundleSha256 = crypto
+    .createHash('sha256').update(bundle).digest('hex');
+  const bundleFile = path.join(cwd, 'app.js');
+  fs.writeFileSync(bundleFile, bundle);
+  fs.writeFileSync(doctorFile, JSON.stringify(report, null, 2) + '\n');
 
   const captureOut = memoryStream();
   assert.equal(await cli.run([
@@ -186,7 +223,7 @@ test('compatibility CLI captures and verifies files with JSON output', async fun
 
   const verifyOut = memoryStream();
   assert.equal(await cli.run([
-    '--cwd', cwd, 'compatibility', 'verify', 'candidate.json', '--json',
+    '--cwd', cwd, 'compatibility', 'verify', 'candidate.json', '--bundle', 'app.js', '--json',
   ], { stdout: verifyOut, stderr: memoryStream() }), 0);
   assert.equal(JSON.parse(verifyOut.value).result.status, 'ready-for-review');
 
@@ -195,8 +232,14 @@ test('compatibility CLI captures and verifies files with JSON output', async fun
   fs.writeFileSync(candidateFile, JSON.stringify(invalid, null, 2) + '\n');
   const invalidOut = memoryStream();
   assert.equal(await cli.run([
-    '--cwd', cwd, 'compatibility', 'verify', 'candidate.json', '--json',
+    '--cwd', cwd, 'compatibility', 'verify', 'candidate.json', '--bundle', 'app.js', '--json',
   ], { stdout: invalidOut, stderr: memoryStream() }), 3);
   const failure = JSON.parse(invalidOut.value);
   assert.equal(failure.error.details.errors[0].id, 'runtime-contract');
+
+  const help = memoryStream();
+  assert.equal(await cli.run([
+    'compatibility', 'verify', '--help',
+  ], { cwd, stdout: help, stderr: memoryStream() }), 0);
+  assert.match(help.value, /--bundle <app\.js\[\.gz\]>/);
 });

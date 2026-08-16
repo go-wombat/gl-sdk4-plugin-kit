@@ -118,6 +118,11 @@ async function main() {
         fail(`Admin bundle does not register portable component ${component}.`);
       }
     });
+    firmware.staticPortableComponents.forEach((component) => {
+      if (!analysis.staticPortableComponents.includes(component)) {
+        fail(`Admin bundle does not contain static component signal ${component}.`);
+      }
+    });
 
     const login = decodeBundle(readSquashfs(
       root, 'www/views/gl-sdk4-ui-login.common.js.gz'
@@ -156,6 +161,8 @@ async function main() {
       appBundleSha256: analysis.bundleSha256,
       runtimeContract: 'sdk4-modern-v1',
       portableComponents: analysis.portableComponents,
+      staticPortableComponents: analysis.staticPortableComponents,
+      componentEvidence: analysis.componentEvidence,
     }, null, 2) + '\n');
   } finally {
     fs.rmSync(temporary, { recursive: true, force: true });
