@@ -300,10 +300,6 @@ wrappers. Menu files are package-owned and are not marked as `conffiles`. See
 
 - [hello-world](examples/hello-world/) — Minimal plugin showing device info
 - [network-info](examples/network-info/) — Plugin with tables and multiple cards
-- [vpn-status](examples/vpn-status/) — VPN dashboard with service status
-- [wifi-scanner](examples/wifi-scanner/) — Scan nearby Wi-Fi networks
-- [client-monitor](examples/client-monitor/) — Connected devices with traffic stats
-- [firewall-viewer](examples/firewall-viewer/) — Port forwards, rules, WAN access
 
 ## Extract Components from Any Firmware
 
