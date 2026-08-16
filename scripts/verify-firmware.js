@@ -113,6 +113,16 @@ async function main() {
     if (!analysis.contracts.viewLoader || !analysis.contracts.rpcRequest) {
       fail('Admin bundle does not implement the sdk4-modern-v1 loader/RPC contract.');
     }
+    if (
+      firmware.lineChartContract &&
+      analysis.lineChartContract.contractId !== firmware.lineChartContract
+    ) {
+      fail(
+        `gl-line-chart contract changed: expected ${firmware.lineChartContract}, ` +
+        `got ${analysis.lineChartContract.status} ` +
+        `(${analysis.lineChartContract.missingEvidence.join(', ') || 'no contract'})`
+      );
+    }
     firmware.portableComponents.forEach((component) => {
       if (!analysis.portableComponents.includes(component)) {
         fail(`Admin bundle does not register portable component ${component}.`);
@@ -160,6 +170,7 @@ async function main() {
       artifactSha256,
       appBundleSha256: analysis.bundleSha256,
       runtimeContract: 'sdk4-modern-v1',
+      lineChartContract: analysis.lineChartContract.contractId,
       portableComponents: analysis.portableComponents,
       staticPortableComponents: analysis.staticPortableComponents,
       componentEvidence: analysis.componentEvidence,

@@ -72,6 +72,32 @@ Card container. The main layout building block.
 </gl-card>
 ```
 
+#### SDK card layout utilities
+
+The firmware component keeps its visible body in an internal container and does
+not expose a height prop. Import the SDK stylesheet once in every independently
+built view, then opt cards into the public layout classes:
+
+```vue
+<template>
+  <div class="dashboard-grid">
+    <gl-card class="gl-sdk4-card gl-sdk4-card--fill">
+      <div class="gl-sdk4-card__grow">Card body</div>
+    </gl-card>
+  </div>
+</template>
+
+<style src="@gl-sdk4-plugin-kit/gl-card.css"></style>
+```
+
+- `gl-sdk4-card` normalizes sizing around the firmware card body.
+- `gl-sdk4-card--fill` makes the card and its body fill the grid row.
+- `gl-sdk4-card__grow` makes one slot child consume the remaining body height.
+
+The `@gl-sdk4-plugin-kit` alias is provided by `glplugin build`; keep it in a
+custom webpack configuration as shown in the generated template. Plugins should
+not target `.gl-card-wrapper` or `.container` directly.
+
 ---
 
 ### gl-drawer
@@ -393,11 +419,39 @@ Circular percentage indicator.
 
 ### gl-line-chart
 
-Line chart for trends.
+Firmware-provided Chart.js line chart. The verified native contract is identical
+on GL-MT3000 4.8.1 and GL-MT6000 4.9.1.
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `id` | String, Number | `""` | Optional canvas ID suffix |
+| `labels` | Array | `[]` | X-axis labels |
+| `value` | Array | `[]` | Single dataset values |
+| `values` | Array | `[]` | Multiple dataset arrays; takes precedence over `value` |
+| `datasetLabels` | Array | `[]` | Dataset legend labels |
+| `backgroundColor` | String, Array | `""` | Dataset background colors |
+| `borderColor` | String, Array | `""` | Dataset line colors |
+| `borderWidth` | Number | `2` | Dataset line width |
+| `height` | String, Number | `75` | Chart height in pixels |
+| `fill` | Boolean | `true` | Fill datasets to the origin |
+| `x` | Object | `{ display: false }` | Chart.js X scale options |
+| `y` | Object | `{ display: false, min: 0 }` | Chart.js Y scale options |
+| `plugins` | Object | `{}` | Chart.js plugin options |
 
 ```vue
-<gl-line-chart :data="chartData" />
+<gl-line-chart
+  :labels="labels"
+  :value="latency"
+  :border-color="'#1785ff'"
+  :height="210"
+  :x="{ display: true }"
+  :y="{ display: true, min: 0, max: 200 }"
+/>
 ```
+
+The native component depends on input identity when data and options change.
+Use the tested `GlStableLineChart` adapter for polling views, stable scales, or
+timeline overlays. See [Native Charts](charts.md).
 
 ---
 

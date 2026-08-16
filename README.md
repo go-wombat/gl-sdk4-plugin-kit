@@ -156,7 +156,7 @@ Your plugin is a standard Vue 2 single-file component. RPC failures reject norma
 <template>
   <div>
     <gl-title :title="'My Plugin'" />
-    <gl-card>
+    <gl-card class="gl-sdk4-card">
       <p>{{ model }} - {{ uptime }}</p>
       <p v-if="error">{{ error }}</p>
       <gl-button type="primary" @click="fetchData">Refresh</gl-button>
@@ -190,10 +190,27 @@ export default {
 };
 </script>
 
+<style src="@gl-sdk4-plugin-kit/gl-card.css"></style>
+
 <style scoped>
 p { color: var(--text-color); }
 </style>
 ```
+
+### Native charts
+
+The kit includes `GlStableLineChart`, a small adapter around the firmware-provided
+`gl-line-chart`. It preserves observed array/object identities, prevents Y-axis
+shrinkage during polling, and can render stable timeline bands without bundling a
+second chart engine.
+
+```js
+const { GlStableLineChart } = require('@gl-sdk4-plugin-kit/chart');
+```
+
+Import `@gl-sdk4-plugin-kit/gl-line-chart.css`, register the component locally,
+and declare `gl-line-chart` in `compatibility.requiredComponents`. See the
+[native chart guide](docs/charts.md) for the full contract and examples.
 
 ## Node.js API Client
 

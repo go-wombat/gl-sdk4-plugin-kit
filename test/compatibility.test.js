@@ -244,6 +244,9 @@ test('official firmware catalog contains unique modern release fingerprints', fu
     assert.match(entry.artifact.sha256, /^[a-f0-9]{64}$/);
     assert.equal(Array.isArray(entry.portableComponents), true);
     assert.equal(Array.isArray(entry.staticPortableComponents), true);
+    if (entry.lineChartContract) {
+      assert.equal(entry.lineChartContract, 'gl-line-chart-v1');
+    }
   });
 });
 

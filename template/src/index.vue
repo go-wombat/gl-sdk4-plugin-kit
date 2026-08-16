@@ -1,7 +1,7 @@
 <template>
   <div class="__PLUGIN_ID__-wrapper">
     <gl-title :title="$t('__I18N_KEY__.title')" />
-    <gl-card>
+    <gl-card class="gl-sdk4-card">
       <h2 class="plugin-title">__PLUGIN_TITLE__</h2>
       <p class="plugin-copy">
         Plugin is working. Edit <code>src/index.vue</code> to get started.
@@ -15,6 +15,8 @@ export default {
   name: '__PLUGIN_ID__',
 };
 </script>
+
+<style src="@gl-sdk4-plugin-kit/gl-card.css"></style>
 
 <style scoped>
 .__PLUGIN_ID__-wrapper {

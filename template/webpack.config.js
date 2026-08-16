@@ -1,6 +1,7 @@
 const path = require('path');
 const { VueLoaderPlugin } = require('vue-loader');
 const manifest = require('./gl-plugin.json');
+const runtimeDir = process.env.GL_SDK4_PLUGIN_KIT_RUNTIME;
 const views = manifest.views || [
   { id: manifest.id, entry: 'src/index.vue', menu: 'menu.json' },
 ];
@@ -37,5 +38,8 @@ module.exports = {
   plugins: [new VueLoaderPlugin()],
   resolve: {
     extensions: ['.js', '.vue'],
+    alias: runtimeDir ? {
+      '@gl-sdk4-plugin-kit': runtimeDir,
+    } : {},
   },
 };

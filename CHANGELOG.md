@@ -5,6 +5,8 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-16
+
 ### Added
 
 - Experimental `glplugin compatibility capture` and `compatibility verify`
@@ -12,6 +14,11 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
   against the actual admin bundle without modifying the trusted catalog.
 - Complete, buildable `hello-world` and `network-info` example projects.
 - An official GL.iNet Beryl AX product image identifying the live reference router.
+- A typed `GlStableLineChart` adapter with stable polling updates, rounded sticky
+  Y-axis limits, timeline bands, and no additional chart engine.
+- Firmware evidence for the exact `gl-line-chart-v1` prop and behavior contract on
+  GL-MT3000 4.8.1 and GL-MT6000 4.9.1.
+- Public card and chart runtime styles available through the generated webpack alias.
 
 ### Changed
 
@@ -133,7 +140,8 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
   4.8.1 `release8`, including full-stack install, backend execution, development
   redeploy, and package cleanup.
 
-[Unreleased]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.3.0...v0.4.0

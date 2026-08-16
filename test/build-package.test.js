@@ -9,6 +9,7 @@ const build = require('../lib/build');
 const { checkProject } = require('../lib/check');
 const init = require('../lib/init');
 const { inspectPackage } = require('../lib/inspect');
+const { inspectBundleExport } = require('../lib/test');
 const packagePlugin = require('../lib/package');
 const { extractTarGz, makeTempDir, removeTempDir } = require('./helpers');
 
@@ -31,6 +32,10 @@ test('generated plugin builds and packages with the official SDK4 layout', funct
 
   const buildResult = build({ cwd: project.dir });
   assert.ok(fs.existsSync(buildResult.gzFile));
+  assert.match(
+    fs.readFileSync(buildResult.jsFile, 'utf8'),
+    /gl-sdk4-card--fill/
+  );
 
   const packageResult = packagePlugin({ cwd: project.dir });
   assert.equal(packageResult.architecture, 'all');
@@ -93,6 +98,47 @@ test('generated plugin builds and packages with the official SDK4 layout', funct
   );
   assert.match(configuredMetadata, /^Architecture: aarch64_cortex-a53$/m);
   assert.match(configuredMetadata, /^X-GL-RPC-Capabilities: wifi,repeater$/m);
+});
+
+test('generated plugin bundles the stable native chart adapter', function(t) {
+  const cwd = makeTempDir('glplugin-chart-');
+  t.after(function() { removeTempDir(cwd); });
+
+  const project = init('chart-fixture', { cwd });
+  fs.symlinkSync(path.join(repositoryRoot, 'node_modules'), path.join(project.dir, 'node_modules'));
+  fs.writeFileSync(path.join(project.dir, 'src', 'index.vue'), [
+    '<template>',
+    '  <gl-stable-line-chart',
+    '    :labels="labels"',
+    '    :value="values"',
+    '    :minimum-y-max="100"',
+    '    :height="210"',
+    '  />',
+    '</template>',
+    '<script>',
+    "const { GlStableLineChart } = require('@gl-sdk4-plugin-kit/chart');",
+    'export default {',
+    "  name: 'chart-fixture',",
+    '  components: { GlStableLineChart },',
+    '  data() { return { labels: [\'now\'], values: [42] }; },',
+    '};',
+    '</script>',
+    '<style src="@gl-sdk4-plugin-kit/gl-line-chart.css"></style>',
+    '',
+  ].join('\n'));
+  const manifestFile = path.join(project.dir, 'gl-plugin.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  manifest.compatibility.requiredComponents.push('gl-line-chart');
+  fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
+
+  const buildResult = build({ cwd: project.dir });
+  const bundle = fs.readFileSync(buildResult.jsFile, 'utf8');
+  assert.match(bundle, /GlStableLineChart/);
+  assert.match(bundle, /gl-sdk4-chart__bands/);
+  assert.deepEqual(inspectBundleExport(fs.readFileSync(buildResult.gzFile)), {
+    ok: true,
+    detail: 'eval() returned a Vue component',
+  });
 });
 
 test('multi-view plugin builds and packages every declared view and menu', function(t) {
