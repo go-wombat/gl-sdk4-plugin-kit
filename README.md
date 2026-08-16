@@ -69,6 +69,7 @@ glplugin uninstall
 |---------|-------------|
 | `glplugin init <name> [--profile ui-only\|full-stack]` | Scaffold a UI-only or full-stack plugin project |
 | `glplugin view add\|list\|remove` | Manage the plugin's Vue pages and menu entries |
+| `glplugin compatibility capture\|verify` | Create and validate a redacted firmware candidate from doctor JSON |
 | `glplugin check [--strict]` | Validate project files, hooks, and toolchain |
 | `glplugin capabilities` | List valid manifest capability IDs and read-only RPC probes |
 | `glplugin build` | Build plugin (webpack + gzip) |
@@ -351,6 +352,19 @@ SHA-256, SquashFS package layout, auth/runtime contract, portable components,
 `opkg`, menu layout, and lifecycle dispatch. New bundle fingerprints remain
 blocked until added to the catalog. See [the compatibility notes](docs/compatibility.md)
 for the exact matrix and validation boundary.
+
+To inspect a modern but unknown tuple without editing the catalog:
+
+```bash
+glplugin doctor 192.168.8.1 --allow-unverified --json > doctor.json
+glplugin compatibility capture doctor.json
+glplugin compatibility verify compatibility-candidate.json
+```
+
+The candidate contains only normalized router/runtime evidence and omits the target,
+hostname, authentication data, capabilities, and raw RPC responses. A successful
+verification means `ready-for-review`, not supported; catalog changes and firmware
+artifact verification remain manual.
 
 ## Disclaimer
 

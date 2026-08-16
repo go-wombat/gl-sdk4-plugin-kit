@@ -82,6 +82,25 @@ glplugin deploy --build --allow-unverified
 glplugin install --allow-unverified
 ```
 
+Save the JSON result and reduce it to a local compatibility candidate when
+investigating a new tuple:
+
+```bash
+glplugin doctor router.local --allow-unverified --json > doctor.json
+glplugin compatibility capture doctor.json --output candidate.json
+glplugin compatibility verify candidate.json
+```
+
+`capture` accepts both successful doctor JSON and the structured `error.details`
+output produced when an unknown tuple is checked without `--allow-unverified`. It
+removes the target, hostname, auth metadata, capability results, and raw errors.
+It refuses to overwrite an existing output file.
+
+`verify` checks the firmware minimum, exact runtime contract, bundle SHA-256, all
+portable components, and whether the tuple already exists in the firmware catalog.
+`ready-for-review` is evidence for the next manual investigation step; it does not
+modify the catalog or make router-changing commands trust the tuple.
+
 The override applies only to an unknown modern bundle fingerprint. It cannot
 bypass the minimum firmware, missing platform files, architecture mismatch, or
 missing lifecycle support.

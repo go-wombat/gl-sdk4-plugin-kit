@@ -93,6 +93,27 @@ the firmware policy, and reports the exact catalog entry. In a project directory
 also loads the manifest and evaluates required capabilities. Unknown tuples make
 doctor fail unless the explicit override is supplied.
 
+### Candidate Workflow
+
+For an unknown modern tuple, preserve and locally validate the minimum evidence:
+
+```bash
+glplugin doctor router.local --allow-unverified --json > doctor.json
+glplugin compatibility capture doctor.json --output candidate.json
+glplugin compatibility verify candidate.json
+```
+
+The candidate retains the canonical model, normalized firmware, release type,
+architecture, OpenWrt version, runtime contract, decompressed app bundle SHA-256,
+and portable components. It omits the router address, hostname, auth metadata,
+capability responses, and admin bundle path.
+
+Verification returns `ready-for-review` for a complete unknown tuple and
+`already-supported` for an exact catalog match. Neither result edits the catalog.
+Official artifact metadata and contract verification are still required before an
+entry becomes `artifact-verified`; a live plugin cycle is still required for
+`live-supported`.
+
 `glplugin install` and `glplugin deploy` perform an SSH platform preflight before
 uploading project files. The preflight checks the exact bundle, firmware,
 `opkg`, UI core package, accepted package architectures, required filesystem

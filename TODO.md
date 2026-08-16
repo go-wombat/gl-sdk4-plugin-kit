@@ -45,6 +45,7 @@
 - [x] Make doctor RPC checks feature-gated instead of treating optional modules as failures
 - [x] Build and publish a tested compatibility matrix
 - [x] Let projects declare required RPC capabilities and enforce them in doctor/test
+- [x] Capture and locally verify redacted compatibility candidates from doctor JSON
 
 ## API and types
 

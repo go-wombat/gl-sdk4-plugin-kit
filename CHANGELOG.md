@@ -5,6 +5,12 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+
+- Experimental `glplugin compatibility capture` and `compatibility verify`
+  commands for reducing doctor JSON to a redacted, locally validated firmware
+  candidate without modifying the trusted catalog.
+
 ## [0.6.0] - 2026-08-16
 
 ### Added
