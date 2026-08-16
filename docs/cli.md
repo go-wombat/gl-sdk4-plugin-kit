@@ -12,8 +12,9 @@ npm install
 
 glplugin target add beryl root@192.168.8.1 --use
 glplugin check
-glplugin install
+glplugin capabilities
 glplugin doctor
+glplugin install
 ```
 
 `install` runs project checks, builds the view, creates the `.ipk`, performs a
@@ -21,6 +22,12 @@ strict router platform preflight, uploads it to `/tmp`, and invokes `opkg instal
 Use `--no-build` to package and install an existing build artifact. The temporary
 router-side `.ipk` is removed after the install attempt while preserving the
 `opkg` exit status.
+
+`capabilities` is local and does not connect to a router. It lists the IDs accepted
+by `compatibility.requiredCapabilities`, the read-only RPC method used to verify
+each ID, and any feature gate. `doctor` loads those requirements from the current
+project; a missing requirement fails before `install` is attempted in the workflow
+above.
 
 ## Platform Preflight
 

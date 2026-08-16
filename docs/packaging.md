@@ -35,7 +35,8 @@ conffiles, or lifecycle behavior.
   "profile": "full-stack",
   "compatibility": {
     "minimumFirmware": "4.8.0",
-    "requiredComponents": ["gl-card", "gl-title"]
+    "requiredComponents": ["gl-card", "gl-title"],
+    "requiredCapabilities": ["wifi", "repeater"]
   },
   "package": {
     "name": "gl-sdk4-ui-my-plugin",
@@ -61,8 +62,12 @@ binaries.
 
 `compatibility.minimumFirmware` defaults to `4.8.0`. Required components must be
 part of the verified portable UI contract for the target's exact admin bundle.
-The package control file records this as `X-GL-Firmware-Min` and
-`X-GL-UI-Contract`; `install` enforces the same values before upload.
+Required capabilities must be IDs from `glplugin capabilities`; `doctor` and `test`
+require each declared read-only RPC probe to return `available`. The package control
+file records these contracts as `X-GL-Firmware-Min`, `X-GL-UI-Contract`, and
+`X-GL-RPC-Capabilities`. The SSH install preflight enforces the firmware and UI
+contract; run `doctor` before installation when the project declares RPC
+capabilities.
 
 Every `conffiles` entry must be an absolute, normalized path to a regular file
 that exists in the assembled package data. OpenWrt then preserves user-modified

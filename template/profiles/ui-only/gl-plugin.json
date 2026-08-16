@@ -8,7 +8,8 @@
     "requiredComponents": [
       "gl-card",
       "gl-title"
-    ]
+    ],
+    "requiredCapabilities": []
   },
   "package": {
     "name": "gl-sdk4-ui-__PLUGIN_ID__",

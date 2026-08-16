@@ -66,17 +66,31 @@ Projects declare their minimum firmware and required portable components in
 {
   "compatibility": {
     "minimumFirmware": "4.8.0",
-    "requiredComponents": ["gl-card", "gl-title"]
+    "requiredComponents": ["gl-card", "gl-title"],
+    "requiredCapabilities": ["wifi", "repeater"]
   }
 }
 ```
 
-Packages also contain `X-GL-Firmware-Min` and `X-GL-UI-Contract` metadata.
+Packages also contain `X-GL-Firmware-Min`, `X-GL-UI-Contract`, and, when declared,
+`X-GL-RPC-Capabilities` metadata.
+
+## Project Capability Contract
+
+Run `glplugin capabilities` to list valid IDs, their read-only RPC probes, and any
+software or hardware feature gate. `requiredCapabilities` uses these stable IDs
+rather than internal module/method strings.
+
+When `doctor` or `test` runs inside a plugin project, every required capability must
+have status `available`. `unavailable`, `not-supported`, `error`, and `not-probed`
+all fail the project contract. Capabilities not declared by the project remain
+diagnostic and may be skipped when the router does not expose them.
 
 ## CLI Enforcement
 
 `glplugin doctor` authenticates, fingerprints the HTTP admin bundle, evaluates
-the firmware policy, and reports the exact catalog entry. Unknown tuples make
+the firmware policy, and reports the exact catalog entry. In a project directory it
+also loads the manifest and evaluates required capabilities. Unknown tuples make
 doctor fail unless the explicit override is supplied.
 
 `glplugin install` and `glplugin deploy` perform an SSH platform preflight before
@@ -87,8 +101,9 @@ the router unchanged.
 
 `glplugin test` additionally calls `ui.get_menu_list` and requires the current
 project view to be present. It then downloads the installed view and verifies
-that the router's `eval()` loader receives a Vue component. This closes the old
-gap where the view file could exist while the menu entry was absent.
+that the router's `eval()` loader receives a Vue component. It also turns every
+missing required capability into an explicit failed check instead of an optional
+skip.
 
 ## Artifact CI
 

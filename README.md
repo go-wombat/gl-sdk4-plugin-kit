@@ -66,6 +66,7 @@ glplugin uninstall
 |---------|-------------|
 | `glplugin init <name> [--profile ui-only\|full-stack]` | Scaffold a UI-only or full-stack plugin project |
 | `glplugin check [--strict]` | Validate project files, hooks, and toolchain |
+| `glplugin capabilities` | List valid manifest capability IDs and read-only RPC probes |
 | `glplugin build` | Build plugin (webpack + gzip) |
 | `glplugin package` | Create `.ipk` package (installable via opkg, survives reboots) |
 | `glplugin inspect <package.ipk>` | Inspect package metadata and file layout safely |
@@ -106,10 +107,11 @@ glplugin doctor router.local --https --insecure # explicit opt-out for a self-si
 ```
 
 `doctor` fingerprints the exact admin bundle, enforces the firmware 4.8 minimum,
-and calls only read methods. Missing optional modules are reported as unavailable
-or not supported; they do not make the core router check fail. An unknown model,
-firmware, and bundle tuple does fail compatibility unless `--allow-unverified` is
-supplied explicitly.
+and calls only read methods. Inside a plugin project it also enforces
+`compatibility.requiredCapabilities`. Missing optional modules remain informational;
+missing required modules fail the project check. An unknown model, firmware, and
+bundle tuple does fail compatibility unless `--allow-unverified` is supplied
+explicitly.
 
 `test` uses the same feature-gated capability catalog as `doctor`, verifies the
 project view through `ui.get_menu_list`, downloads the deployed bundle, and checks
@@ -246,7 +248,8 @@ Node/build manifest.
   "profile": "full-stack",
   "compatibility": {
     "minimumFirmware": "4.8.0",
-    "requiredComponents": ["gl-card", "gl-title"]
+    "requiredComponents": ["gl-card", "gl-title"],
+    "requiredCapabilities": ["wifi", "repeater"]
   },
   "package": {
     "name": "gl-sdk4-ui-my-plugin",

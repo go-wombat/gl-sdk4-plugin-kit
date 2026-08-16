@@ -42,7 +42,8 @@
 - [x] Add `glplugin doctor` for model, firmware, and capability detection
 - [ ] Version extracted API catalogs by model and firmware
 - [x] Make doctor RPC checks feature-gated instead of treating optional modules as failures
-- [ ] Build and publish a tested compatibility matrix
+- [x] Build and publish a tested compatibility matrix
+- [x] Let projects declare required RPC capabilities and enforce them in doctor/test
 
 ## API and types
 

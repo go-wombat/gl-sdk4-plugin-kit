@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const test = require('node:test');
 const init = require('../lib/init');
+const capabilityCatalog = require('../lib/doctor-capabilities');
+const { CAPABILITY_IDS } = capabilityCatalog;
 const { readPluginProject } = require('../lib/manifest');
 const { makeTempDir, removeTempDir } = require('./helpers');
 
@@ -22,6 +24,7 @@ test('manifest is authoritative and rejects profile/path typos', function(t) {
   const normalized = readPluginProject(project.dir).manifest;
   assert.equal(normalized.compatibility.minimumFirmware, '4.8.0');
   assert.deepEqual(normalized.compatibility.requiredComponents, ['gl-card', 'gl-title']);
+  assert.deepEqual(normalized.compatibility.requiredCapabilities, []);
 
   manifest.packge = {};
   writeJson(manifestFile, manifest);
@@ -57,6 +60,31 @@ test('manifest is authoritative and rejects profile/path typos', function(t) {
   manifest.compatibility.requiredComponents = ['gl-card', 'gl-card'];
   writeJson(manifestFile, manifest);
   assert.throws(() => readPluginProject(project.dir), /must not contain duplicates/);
+
+  manifest.compatibility.requiredComponents = ['gl-card', 'gl-title'];
+  manifest.compatibility.requiredCapabilities = ['wifi', 'wifi'];
+  writeJson(manifestFile, manifest);
+  assert.throws(() => readPluginProject(project.dir), /requiredCapabilities.*duplicates/);
+
+  manifest.compatibility.requiredCapabilities = ['wifi', 'imaginary-radio'];
+  writeJson(manifestFile, manifest);
+  assert.throws(() => readPluginProject(project.dir), /Unknown compatibility capability.*imaginary-radio/);
+
+  manifest.compatibility.requiredCapabilities = ['wifi', 'repeater'];
+  writeJson(manifestFile, manifest);
+  assert.deepEqual(
+    readPluginProject(project.dir).manifest.compatibility.requiredCapabilities,
+    ['wifi', 'repeater']
+  );
+});
+
+test('manifest schema capability enum matches the runtime catalog', function() {
+  const schema = require('../schema/gl-plugin.schema.json');
+  assert.equal(Array.isArray(capabilityCatalog), true);
+  assert.deepEqual(
+    schema.properties.compatibility.properties.requiredCapabilities.items.enum,
+    CAPABILITY_IDS
+  );
 });
 
 test('legacy package.json projects remain readable without a manifest', function(t) {
@@ -78,6 +106,7 @@ test('legacy package.json projects remain readable without a manifest', function
   assert.equal(project.manifest.profile, 'ui-only');
   assert.equal(project.manifest.package.architecture, 'mipsel_24kc');
   assert.equal(project.manifest.compatibility.minimumFirmware, '4.8.0');
+  assert.deepEqual(project.manifest.compatibility.requiredCapabilities, []);
   assert.deepEqual(
     project.manifest.package.depends,
     ['libc', 'gl-sdk4-ui-core', 'legacy-backend']

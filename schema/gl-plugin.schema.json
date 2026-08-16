@@ -28,6 +28,34 @@
             "pattern": "^[A-Za-z][A-Za-z0-9-]*$"
           },
           "uniqueItems": true
+        },
+        "requiredCapabilities": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "clients",
+              "wifi",
+              "network",
+              "firewall",
+              "dns",
+              "repeater",
+              "plugins",
+              "ui",
+              "vpn-client",
+              "wireguard-client",
+              "openvpn-client",
+              "adguardhome",
+              "ipv6",
+              "tor",
+              "tailscale",
+              "zerotier",
+              "fan",
+              "modem",
+              "sqm",
+              "dpi"
+            ]
+          },
+          "uniqueItems": true
         }
       }
     },

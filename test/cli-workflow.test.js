@@ -51,6 +51,18 @@ test('command help is side-effect free and global options parse consistently', a
     { cwd: repositoryRoot, stdout: targetHelp, stderr: memoryStream() }
   ), 0);
   assert.match(targetHelp.value, /target add <name> <\[user@\]host>/);
+
+  const capabilityOut = memoryStream();
+  assert.equal(await cli.run(
+    ['capabilities', '--json'],
+    { cwd: repositoryRoot, stdout: capabilityOut, stderr: memoryStream() }
+  ), 0);
+  const capabilityResult = JSON.parse(capabilityOut.value);
+  assert.equal(capabilityResult.result.capabilities[0].id, 'clients');
+  assert.equal(
+    capabilityResult.result.capabilities.find((item) => item.id === 'repeater').rpc,
+    'repeater.get_status'
+  );
 });
 
 test('target commands persist validated connection settings without credentials', async function(t) {
@@ -225,7 +237,22 @@ test('router test reuses doctor capabilities and never exposes a session identif
   t.after(() => removeTempDir(cwd));
   const project = init('router-test-fixture', { cwd, log() {} });
   const bundle = zlib.gzipSync('(function(){return {name:"fixture",render:function(){}}})()');
-  const report = await verifyRouter('router.local', 'private-password', {
+  const inspectRouter = async () => ({
+    ok: true,
+    target: 'http://router.local',
+    router: { model: 'GL-MT3000', firmware_version: '4.8.1' },
+    compatibility: {
+      compatible: true,
+      status: 'live-supported',
+      reason: 'fixture',
+    },
+    plugin: { menu_view: 'router-test-fixture', menu_loaded: true },
+    capabilities: [
+      { id: 'wifi', status: 'available' },
+      { id: 'dpi', status: 'unavailable' },
+    ],
+  });
+  const options = {
     cwd: project.dir,
     username: 'root',
     transportOptions: {},
@@ -233,25 +260,30 @@ test('router test reuses doctor capabilities and never exposes a session identif
       status: 200,
       body: urlPath === '/' ? Buffer.from('admin') : bundle,
     }),
-    inspectRouter: async () => ({
-      ok: true,
-      target: 'http://router.local',
-      router: { model: 'GL-MT3000', firmware_version: '4.8.1' },
-      compatibility: {
-        compatible: true,
-        status: 'live-supported',
-        reason: 'fixture',
-      },
-      plugin: { menu_view: 'router-test-fixture', menu_loaded: true },
-      capabilities: [
-        { id: 'wifi', status: 'available' },
-        { id: 'dpi', status: 'unavailable' },
-      ],
-    }),
-  });
+    inspectRouter,
+  };
+  const report = await verifyRouter('router.local', 'private-password', options);
   assert.equal(report.ok, true);
   assert.equal(report.checks.find((item) => item.id === 'plugin-export').status, 'pass');
   assert.equal(report.capabilities.find((item) => item.id === 'dpi').testStatus, 'skip');
   assert.deepEqual(report.capabilitySummary, { available: 1, unavailable: 1 });
   assert.doesNotMatch(JSON.stringify(report), /private-password|sid|session/i);
+
+  const manifestFile = path.join(project.dir, 'gl-plugin.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  manifest.compatibility.requiredCapabilities = ['wifi', 'dpi'];
+  fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
+
+  const requiredReport = await verifyRouter('router.local', 'private-password', options);
+  assert.equal(requiredReport.ok, false);
+  assert.equal(
+    requiredReport.checks.find((item) => item.id === 'required-capability.wifi').status,
+    'pass'
+  );
+  assert.equal(
+    requiredReport.checks.find((item) => item.id === 'required-capability.dpi').status,
+    'fail'
+  );
+  assert.equal(requiredReport.capabilities.find((item) => item.id === 'dpi').required, true);
+  assert.equal(requiredReport.capabilities.find((item) => item.id === 'dpi').testStatus, 'fail');
 });

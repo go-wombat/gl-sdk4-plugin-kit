@@ -76,6 +76,7 @@ test('generated plugin builds and packages with the official SDK4 layout', funct
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   manifest.package.architecture = 'aarch64_cortex-a53';
   manifest.package.depends.push('gl-sdk4-fixture-backend');
+  manifest.compatibility.requiredCapabilities = ['wifi', 'repeater'];
   fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
 
   const configuredPackage = packagePlugin({ cwd: project.dir });
@@ -90,6 +91,7 @@ test('generated plugin builds and packages with the official SDK4 layout', funct
     /^Depends: libc, gl-sdk4-ui-core, gl-sdk4-fixture-backend$/m
   );
   assert.match(configuredMetadata, /^Architecture: aarch64_cortex-a53$/m);
+  assert.match(configuredMetadata, /^X-GL-RPC-Capabilities: wifi,repeater$/m);
 });
 
 test('full-stack package preserves overlay, conffiles, and OpenWrt lifecycle dispatch', function(t) {

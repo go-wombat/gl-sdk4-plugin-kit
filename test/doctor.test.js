@@ -1,15 +1,21 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const fs = require('fs');
+const path = require('path');
 const test = require('node:test');
 const { RpcError } = require('../lib/auth');
-const { formatDoctorReport, inspectRouter, menuContainsView } = require('../lib/doctor');
+const doctor = require('../lib/doctor');
+const { formatDoctorReport, inspectRouter, menuContainsView } = doctor;
+const init = require('../lib/init');
 const { applyRouterTarget, parseRouterArgs } = require('../lib/router-command');
+const { makeTempDir, removeTempDir } = require('./helpers');
 
 test('doctor reports model, firmware, auth, and feature-gated capabilities', async function() {
   const calls = [];
   const report = await inspectRouter('192.0.2.1', 'fixture-password', {
     username: 'root',
+    requiredCapabilities: ['wifi'],
     login: async function() {
       return { sid: 'private-session', auth: { alg: '6', name: 'sha512-crypt' } };
     },
@@ -60,11 +66,55 @@ test('doctor reports model, firmware, auth, and feature-gated capabilities', asy
   assert.equal(report.capabilities.find((item) => item.id === 'fan').status, 'not-supported');
   assert.equal(report.capabilities.find((item) => item.id === 'dpi').status, 'unavailable');
   assert.equal(report.capabilities.find((item) => item.id === 'wifi').status, 'available');
+  assert.equal(report.capability_contract.satisfied, true);
+  assert.deepEqual(report.capability_contract.required, ['wifi']);
   assert.equal(calls.includes('adguardhome.get_config'), false);
   assert.equal(calls.includes('fan.get_status'), false);
   assert.doesNotMatch(JSON.stringify(report), /private-session|fixture-password/);
   assert.match(formatDoctorReport(report), /Firmware: 4\.8\.1 \(testing\)/);
   assert.match(formatDoctorReport(report), /Deep Packet Inspection \(4\.9\+\): unavailable/);
+  assert.match(formatDoctorReport(report), /Required capabilities[\s\S]*\[PASS\] wifi: available/);
+});
+
+test('doctor loads required capabilities from the current plugin manifest', async function(t) {
+  const cwd = makeTempDir('glplugin-doctor-project-');
+  t.after(() => removeTempDir(cwd));
+  const project = init('doctor-project', { cwd, log() {} });
+  const manifestFile = path.join(project.dir, 'gl-plugin.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  manifest.compatibility.requiredCapabilities = ['wifi', 'repeater'];
+  fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
+
+  const report = {
+    ok: true,
+    target: 'http://router.local',
+    auth: { alg: '1', name: 'md5-crypt' },
+    transport: { tls_verification: 'not-applicable' },
+    router: { model: 'GL-MT3000' },
+    compatibility: { compatible: true, status: 'live-supported' },
+    capability_contract: { required: ['wifi', 'repeater'], satisfied: true, checks: [] },
+    capabilities: [],
+    errors: [],
+    summary: {},
+  };
+  const result = await doctor([], {
+    cwd: project.dir,
+    json: true,
+    resolveTarget() {
+      return {
+        rpcHost: 'router.local', username: 'root', https: false, insecure: false,
+      };
+    },
+    readRouterPassword: async () => 'private-password',
+    inspectRouter: async (host, password, options) => {
+      assert.equal(host, 'router.local');
+      assert.equal(password, 'private-password');
+      assert.deepEqual(options.requiredComponents, ['gl-card', 'gl-title']);
+      assert.deepEqual(options.requiredCapabilities, ['wifi', 'repeater']);
+      return report;
+    },
+  });
+  assert.equal(result, report);
 });
 
 test('router CLI arguments reject positional passwords', function() {
