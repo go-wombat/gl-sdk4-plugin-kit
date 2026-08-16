@@ -86,6 +86,25 @@ test('deploy preflights inputs and uploads every asset through argument arrays',
     path.join(project.dir, 'dist', 'gl-sdk4-ui-deploy-fixture.common.js.gz'),
     'bundle'
   );
+  fs.writeFileSync(
+    path.join(project.dir, 'dist', 'gl-sdk4-ui-deploy-tools.common.js.gz'),
+    'tools bundle'
+  );
+  fs.mkdirSync(path.join(project.dir, 'menus'));
+  fs.writeFileSync(path.join(project.dir, 'menus', 'tools.json'), JSON.stringify({
+    index: 21,
+    view: 'deploy-tools',
+    title: 'Tools',
+    icon: 'setting',
+    level: 1,
+  }) + '\n');
+  const manifestFile = path.join(project.dir, 'gl-plugin.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  manifest.views = [
+    { id: 'deploy-fixture', entry: 'src/index.vue', menu: 'menu.json' },
+    { id: 'deploy-tools', entry: 'src/index.vue', menu: 'menus/tools.json' },
+  ];
+  fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
 
   const calls = [];
   const spawnSync = (command, args, options) => {
@@ -100,11 +119,11 @@ test('deploy preflights inputs and uploads every asset through argument arrays',
   });
 
   assert.equal(result.target, 'root@router.local');
-  assert.equal(result.uploaded, 3);
+  assert.equal(result.uploaded, 5);
   assert.equal(result.compatibility.status, 'live-supported');
   assert.deepEqual(
     calls.map((call) => call.command),
-    ['ssh', 'scp', 'scp', 'ssh', 'scp', 'ssh']
+    ['ssh', 'scp', 'scp', 'scp', 'scp', 'ssh', 'scp', 'ssh']
   );
   calls.forEach((call) => {
     assert.equal(call.options.shell, false);

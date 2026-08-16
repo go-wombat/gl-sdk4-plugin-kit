@@ -13,6 +13,24 @@
       "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
     },
     "profile": { "enum": ["ui-only", "full-stack"] },
+    "views": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "entry", "menu"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+          },
+          "entry": { "$ref": "#/$defs/projectPath" },
+          "menu": { "$ref": "#/$defs/projectPath" }
+        }
+      }
+    },
     "compatibility": {
       "type": "object",
       "additionalProperties": false,

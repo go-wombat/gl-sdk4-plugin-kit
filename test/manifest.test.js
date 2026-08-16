@@ -25,6 +25,11 @@ test('manifest is authoritative and rejects profile/path typos', function(t) {
   assert.equal(normalized.compatibility.minimumFirmware, '4.8.0');
   assert.deepEqual(normalized.compatibility.requiredComponents, ['gl-card', 'gl-title']);
   assert.deepEqual(normalized.compatibility.requiredCapabilities, []);
+  assert.deepEqual(normalized.views, [{
+    id: 'manifest-fixture',
+    entry: 'src/index.vue',
+    menu: 'menu.json',
+  }]);
 
   manifest.packge = {};
   writeJson(manifestFile, manifest);
@@ -76,6 +81,47 @@ test('manifest is authoritative and rejects profile/path typos', function(t) {
     readPluginProject(project.dir).manifest.compatibility.requiredCapabilities,
     ['wifi', 'repeater']
   );
+});
+
+test('manifest validates explicit multi-view declarations', function(t) {
+  const cwd = makeTempDir('glplugin-multiview-manifest-');
+  t.after(function() { removeTempDir(cwd); });
+  const project = init('multi-fixture', { cwd });
+  const manifestFile = path.join(project.dir, 'gl-plugin.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  manifest.views = [
+    { id: 'multi-fixture', entry: 'src/index.vue', menu: 'menu.json' },
+    { id: 'multi-details', entry: 'src/details.vue', menu: 'menus/details.json' },
+  ];
+  writeJson(manifestFile, manifest);
+  assert.deepEqual(
+    readPluginProject(project.dir).manifest.views.map((view) => view.id),
+    ['multi-fixture', 'multi-details']
+  );
+
+  manifest.views[1].id = 'multi-fixture';
+  writeJson(manifestFile, manifest);
+  assert.throws(() => readPluginProject(project.dir), /Duplicate view ID/);
+
+  manifest.views[1].id = 'multi-details';
+  manifest.views[1].menu = 'menu.json';
+  writeJson(manifestFile, manifest);
+  assert.throws(() => readPluginProject(project.dir), /Duplicate view menu path/);
+
+  manifest.views = [{ id: 'multi-details', entry: 'src/details.vue', menu: 'menus/details.json' }];
+  writeJson(manifestFile, manifest);
+  assert.throws(() => readPluginProject(project.dir), /must include the primary plugin ID/);
+
+  manifest.views = [
+    { id: 'multi-fixture', entry: 'src/index.vue', menu: 'menu.json' },
+    { id: 'multi-details', entry: '../outside.vue', menu: 'menus/details.json' },
+  ];
+  writeJson(manifestFile, manifest);
+  assert.throws(() => readPluginProject(project.dir), /must stay inside the plugin project/);
+
+  manifest.views = [];
+  writeJson(manifestFile, manifest);
+  assert.throws(() => readPluginProject(project.dir), /must be a non-empty array/);
 });
 
 test('manifest schema capability enum matches the runtime catalog', function() {

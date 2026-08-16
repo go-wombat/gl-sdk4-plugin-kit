@@ -16,6 +16,7 @@ test('doctor reports model, firmware, auth, and feature-gated capabilities', asy
   const report = await inspectRouter('192.0.2.1', 'fixture-password', {
     username: 'root',
     requiredCapabilities: ['wifi'],
+    requiredMenuViews: ['fixture-main', 'fixture-tools'],
     login: async function() {
       return { sid: 'private-session', auth: { alg: '6', name: 'sha512-crypt' } };
     },
@@ -49,6 +50,14 @@ test('doctor reports model, firmware, auth, and feature-gated capabilities', asy
         };
       }
       if (module === 'system' && method === 'get_status') return { system: { mode: 0 } };
+      if (module === 'ui' && method === 'get_menu_list') {
+        return {
+          menus: [
+            { view: 'fixture-main' },
+            { view: 'applications', children: [{ view: 'fixture-tools' }] },
+          ],
+        };
+      }
       if (module === 'sqm' || module === 'dpi' || module === 'tailscale') {
         throw new RpcError('Method not found', { code: -32601 });
       }
@@ -68,12 +77,18 @@ test('doctor reports model, firmware, auth, and feature-gated capabilities', asy
   assert.equal(report.capabilities.find((item) => item.id === 'wifi').status, 'available');
   assert.equal(report.capability_contract.satisfied, true);
   assert.deepEqual(report.capability_contract.required, ['wifi']);
+  assert.equal(report.plugin.menu_loaded, true);
+  assert.deepEqual(report.plugin.menu_views, [
+    { view: 'fixture-main', loaded: true },
+    { view: 'fixture-tools', loaded: true },
+  ]);
   assert.equal(calls.includes('adguardhome.get_config'), false);
   assert.equal(calls.includes('fan.get_status'), false);
   assert.doesNotMatch(JSON.stringify(report), /private-session|fixture-password/);
   assert.match(formatDoctorReport(report), /Firmware: 4\.8\.1 \(testing\)/);
   assert.match(formatDoctorReport(report), /Deep Packet Inspection \(4\.9\+\): unavailable/);
   assert.match(formatDoctorReport(report), /Required capabilities[\s\S]*\[PASS\] wifi: available/);
+  assert.match(formatDoctorReport(report), /Menu view fixture-tools: loaded/);
 });
 
 test('doctor loads required capabilities from the current plugin manifest', async function(t) {

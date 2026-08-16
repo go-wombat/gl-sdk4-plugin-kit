@@ -246,6 +246,10 @@ Node/build manifest.
   "schemaVersion": 1,
   "id": "my-plugin",
   "profile": "full-stack",
+  "views": [
+    { "id": "my-plugin", "entry": "src/index.vue", "menu": "menu.json" },
+    { "id": "my-plugin-tools", "entry": "src/tools.vue", "menu": "menus/tools.json" }
+  ],
   "compatibility": {
     "minimumFirmware": "4.8.0",
     "requiredComponents": ["gl-card", "gl-title"],
@@ -269,7 +273,9 @@ Node/build manifest.
 The default `ui-only` profile packages the admin view, menu, and translations.
 `full-stack` additionally copies `overlay/` into the router root filesystem,
 supports package dependencies and conffiles, and validates POSIX shell lifecycle
-hooks. Existing pre-manifest projects using `package.json.pluginName/glPlugin`
+hooks. The optional `views` array packages multiple native pages; omitting it
+keeps the single `src/index.vue` plus `menu.json` convention. Existing
+pre-manifest projects using `package.json.pluginName/glPlugin`
 remain readable through a legacy adapter.
 
 `glplugin package` also writes `Installed-Size`, `SourceName`,

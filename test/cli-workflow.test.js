@@ -197,7 +197,22 @@ test('dev performs an initial build/deploy and closes all watchers', function(t)
   const cwd = makeTempDir('glplugin-dev-');
   t.after(() => removeTempDir(cwd));
   const project = init('dev-fixture', { cwd, log() {} });
+  fs.mkdirSync(path.join(project.dir, 'pages'));
+  fs.mkdirSync(path.join(project.dir, 'navigation'));
+  fs.copyFileSync(
+    path.join(project.dir, 'src', 'index.vue'),
+    path.join(project.dir, 'pages', 'details.vue')
+  );
+  fs.writeFileSync(path.join(project.dir, 'navigation', 'details.json'), '{}\n');
+  const manifestFile = path.join(project.dir, 'gl-plugin.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  manifest.views = [
+    { id: 'dev-fixture', entry: 'src/index.vue', menu: 'menu.json' },
+    { id: 'dev-details', entry: 'pages/details.vue', menu: 'navigation/details.json' },
+  ];
+  fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
   const watchers = [];
+  const watchedPaths = [];
   let deploys = 0;
   let sessionCloses = 0;
   const controller = dev.startDev({
@@ -217,7 +232,8 @@ test('dev performs an initial build/deploy and closes all watchers', function(t)
         close() { sessionCloses += 1; },
       };
     },
-    watch() {
+    watch(watchedPath) {
+      watchedPaths.push(watchedPath);
       const watcher = { closed: false, close() { this.closed = true; } };
       watchers.push(watcher);
       return watcher;
@@ -225,6 +241,9 @@ test('dev performs an initial build/deploy and closes all watchers', function(t)
   });
   assert.equal(deploys, 1);
   assert.equal(controller.watched, watchers.length);
+  assert.equal(watchedPaths.includes(path.join(project.dir, 'src')), true);
+  assert.equal(watchedPaths.includes(path.join(project.dir, 'pages')), true);
+  assert.equal(watchedPaths.includes(path.join(project.dir, 'navigation')), true);
   controller.close();
   assert.equal(watchers.every((watcher) => watcher.closed), true);
   assert.equal(sessionCloses, 1);
@@ -236,22 +255,42 @@ test('router test reuses doctor capabilities and never exposes a session identif
   const cwd = makeTempDir('glplugin-router-test-');
   t.after(() => removeTempDir(cwd));
   const project = init('router-test-fixture', { cwd, log() {} });
+  const manifestFile = path.join(project.dir, 'gl-plugin.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  manifest.views = [
+    { id: 'router-test-fixture', entry: 'src/index.vue', menu: 'menu.json' },
+    { id: 'router-test-details', entry: 'src/index.vue', menu: 'menu-details.json' },
+  ];
+  fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
   const bundle = zlib.gzipSync('(function(){return {name:"fixture",render:function(){}}})()');
-  const inspectRouter = async () => ({
-    ok: true,
-    target: 'http://router.local',
-    router: { model: 'GL-MT3000', firmware_version: '4.8.1' },
-    compatibility: {
-      compatible: true,
-      status: 'live-supported',
-      reason: 'fixture',
-    },
-    plugin: { menu_view: 'router-test-fixture', menu_loaded: true },
-    capabilities: [
-      { id: 'wifi', status: 'available' },
-      { id: 'dpi', status: 'unavailable' },
-    ],
-  });
+  const inspectRouter = async (host, password, inspectOptions) => {
+    assert.deepEqual(
+      inspectOptions.requiredMenuViews,
+      ['router-test-fixture', 'router-test-details']
+    );
+    return {
+      ok: true,
+      target: 'http://router.local',
+      router: { model: 'GL-MT3000', firmware_version: '4.8.1' },
+      compatibility: {
+        compatible: true,
+        status: 'live-supported',
+        reason: 'fixture',
+      },
+      plugin: {
+        menu_view: 'router-test-fixture',
+        menu_loaded: true,
+        menu_views: [
+          { view: 'router-test-fixture', loaded: true },
+          { view: 'router-test-details', loaded: true },
+        ],
+      },
+      capabilities: [
+        { id: 'wifi', status: 'available' },
+        { id: 'dpi', status: 'unavailable' },
+      ],
+    };
+  };
   const options = {
     cwd: project.dir,
     username: 'root',
@@ -265,12 +304,12 @@ test('router test reuses doctor capabilities and never exposes a session identif
   const report = await verifyRouter('router.local', 'private-password', options);
   assert.equal(report.ok, true);
   assert.equal(report.checks.find((item) => item.id === 'plugin-export').status, 'pass');
+  assert.equal(report.checks.find((item) => item.id === 'plugin-menu.router-test-details').status, 'pass');
+  assert.equal(report.checks.find((item) => item.id === 'plugin-export.router-test-details').status, 'pass');
   assert.equal(report.capabilities.find((item) => item.id === 'dpi').testStatus, 'skip');
   assert.deepEqual(report.capabilitySummary, { available: 1, unavailable: 1 });
   assert.doesNotMatch(JSON.stringify(report), /private-password|sid|session/i);
 
-  const manifestFile = path.join(project.dir, 'gl-plugin.json');
-  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   manifest.compatibility.requiredCapabilities = ['wifi', 'dpi'];
   fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
 

@@ -5,6 +5,14 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-16
+
+### Added
+
+- Generic multi-view plugin manifests. Build, check, package, deploy, dev, and
+  router tests now process every declared Vue entry and menu file while keeping
+  the existing single-view defaults.
+
 ## [0.4.0] - 2026-08-16
 
 ### Added
@@ -89,7 +97,8 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
   4.8.1 `release8`, including full-stack install, backend execution, development
   redeploy, and package cleanup.
 
-[Unreleased]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/releases/tag/v0.2.0

@@ -6,6 +6,7 @@ const path = require('path');
 const test = require('node:test');
 const vm = require('vm');
 const build = require('../lib/build');
+const { checkProject } = require('../lib/check');
 const init = require('../lib/init');
 const { inspectPackage } = require('../lib/inspect');
 const packagePlugin = require('../lib/package');
@@ -92,6 +93,58 @@ test('generated plugin builds and packages with the official SDK4 layout', funct
   );
   assert.match(configuredMetadata, /^Architecture: aarch64_cortex-a53$/m);
   assert.match(configuredMetadata, /^X-GL-RPC-Capabilities: wifi,repeater$/m);
+});
+
+test('multi-view plugin builds and packages every declared view and menu', function(t) {
+  const cwd = makeTempDir('glplugin-multiview-');
+  t.after(function() { removeTempDir(cwd); });
+
+  const project = init('multi-view-fixture', { cwd });
+  fs.symlinkSync(path.join(repositoryRoot, 'node_modules'), path.join(project.dir, 'node_modules'));
+  fs.copyFileSync(
+    path.join(project.dir, 'src', 'index.vue'),
+    path.join(project.dir, 'src', 'details.vue')
+  );
+  fs.mkdirSync(path.join(project.dir, 'menus'));
+  fs.writeFileSync(path.join(project.dir, 'menus', 'details.json'), JSON.stringify({
+    index: 20,
+    view: 'multi-view-details',
+    title: 'Details',
+    icon: 'setting',
+    level: 1,
+  }, null, 2) + '\n');
+
+  const manifestFile = path.join(project.dir, 'gl-plugin.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+  manifest.views = [
+    { id: 'multi-view-fixture', entry: 'src/index.vue', menu: 'menu.json' },
+    { id: 'multi-view-details', entry: 'src/details.vue', menu: 'menus/details.json' },
+  ];
+  fs.writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
+
+  const buildResult = build({ cwd: project.dir });
+  assert.deepEqual(buildResult.views.map((view) => view.id), [
+    'multi-view-fixture',
+    'multi-view-details',
+  ]);
+  buildResult.views.forEach((view) => assert.ok(fs.existsSync(view.gzFile)));
+
+  const checkResult = checkProject(project.dir);
+  assert.equal(checkResult.ok, true);
+  assert.equal(checkResult.checks.find((item) => item.id === 'menu.multi-view-details').status, 'pass');
+  assert.equal(checkResult.checks.find((item) => item.id === 'source.multi-view-details').status, 'pass');
+  assert.equal(checkResult.checks.find((item) => item.id === 'artifact.multi-view-details').status, 'pass');
+
+  const packageResult = packagePlugin({ cwd: project.dir });
+  const inspection = inspectPackage(packageResult.ipkFile);
+  assert.deepEqual(inspection.summary.viewFiles, [
+    'www/views/gl-sdk4-ui-multi-view-details.common.js.gz',
+    'www/views/gl-sdk4-ui-multi-view-fixture.common.js.gz',
+  ]);
+  assert.deepEqual(inspection.summary.menuFiles, [
+    'usr/share/oui/menu.d/multi-view-fixture.json',
+    'usr/share/oui/menu.d/multi-view-details.json',
+  ]);
 });
 
 test('full-stack package preserves overlay, conffiles, and OpenWrt lifecycle dispatch', function(t) {

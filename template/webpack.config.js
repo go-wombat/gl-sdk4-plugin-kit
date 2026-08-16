@@ -1,13 +1,16 @@
 const path = require('path');
 const { VueLoaderPlugin } = require('vue-loader');
 const manifest = require('./gl-plugin.json');
+const views = manifest.views || [
+  { id: manifest.id, entry: 'src/index.vue', menu: 'menu.json' },
+];
 
 module.exports = {
   mode: 'production',
-  entry: './src/index.vue',
+  entry: Object.fromEntries(views.map((view) => [view.id, `./${view.entry}`])),
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: `gl-sdk4-ui-${manifest.id}.common.js`,
+    filename: 'gl-sdk4-ui-[name].common.js',
     libraryTarget: 'commonjs2',
     libraryExport: 'default',
   },

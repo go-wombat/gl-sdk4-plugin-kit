@@ -25,6 +25,24 @@ view, menu, and translations only. It prints a warning for `full-stack` projects
 Build the `.ipk` and install it with opkg when testing overlay files, dependencies,
 conffiles, or lifecycle behavior.
 
+A plugin can expose several native admin pages from one package. Declare each
+view's bundle ID, Vue entry, and menu file in `views`; the primary plugin `id`
+must be present:
+
+```json
+"views": [
+  { "id": "my-plugin", "entry": "src/index.vue", "menu": "menu.json" },
+  { "id": "my-plugin-tools", "entry": "src/tools.vue", "menu": "menus/tools.json" }
+]
+```
+
+The generated webpack configuration emits
+`dist/gl-sdk4-ui-<view-id>.common.js` for every declaration. Build, check,
+package, deploy, dev, and router tests then process every view. Custom webpack
+configurations must preserve that output naming contract. When `views` is
+omitted, the single-view defaults remain `src/index.vue` and `menu.json`,
+preserving compatibility with existing projects.
+
 ## Manifest
 
 ```json
