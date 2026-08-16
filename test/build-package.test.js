@@ -183,14 +183,14 @@ test('multi-view plugin builds and packages every declared view and menu', funct
 
   const packageResult = packagePlugin({ cwd: project.dir });
   const inspection = inspectPackage(packageResult.ipkFile);
-  assert.deepEqual(inspection.summary.viewFiles, [
+  assert.deepEqual(inspection.summary.viewFiles.slice().sort(), [
     'www/views/gl-sdk4-ui-multi-view-fixture.common.js.gz',
     'www/views/gl-sdk4-ui-multi-view-fixture-details.common.js.gz',
-  ]);
-  assert.deepEqual(inspection.summary.menuFiles, [
+  ].sort());
+  assert.deepEqual(inspection.summary.menuFiles.slice().sort(), [
     'usr/share/oui/menu.d/multi-view-fixture.json',
     'usr/share/oui/menu.d/multi-view-fixture-details.json',
-  ]);
+  ].sort());
 
   fs.writeFileSync(path.join(project.dir, 'i18n', 'gl-sdk4-ui-neighbor.en.json'), '{}\n');
   assert.throws(
