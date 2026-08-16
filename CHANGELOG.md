@@ -5,12 +5,6 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
-### Removed
-
-- Product-like `client-monitor`, `wifi-scanner`, `firewall-viewer`, and
-  `vpn-status` examples. The repository now keeps only the neutral `hello-world`
-  and `network-info` examples.
-
 ## [0.4.0] - 2026-08-16
 
 ### Added
