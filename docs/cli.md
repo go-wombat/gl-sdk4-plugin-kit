@@ -6,8 +6,8 @@ router target. It never stores router passwords.
 ## First Run
 
 ```bash
-glplugin init airbnb-radar --profile full-stack
-cd airbnb-radar
+glplugin init router-tool --profile full-stack
+cd router-tool
 npm install
 
 glplugin target add beryl root@192.168.8.1 --use
@@ -28,6 +28,36 @@ by `compatibility.requiredCapabilities`, the read-only RPC method used to verify
 each ID, and any feature gate. `doctor` loads those requirements from the current
 project; a missing requirement fails before `install` is attempted in the workflow
 above.
+
+## Views
+
+The primary page created by `init` remains the required plugin entry. Additional
+pages can be managed without editing `gl-plugin.json` by hand:
+
+```bash
+# Add a level 2 page below the primary plugin menu
+glplugin view add devices --title "Devices" --icon network
+
+# Add a separate level 1 menu item
+glplugin view add reports --title "Reports" --top-level --index 90
+
+glplugin view list
+glplugin view remove reports
+glplugin view remove devices --delete-files
+```
+
+`view add` creates both the Vue source and menu JSON, then declares them in the
+manifest. A `--parent` must name a declared level 1 page; the CLI rejects a third
+menu level because the firmware menu contract supports only levels 1 and 2.
+Existing files are never overwritten. Short command IDs are automatically prefixed
+with the primary plugin ID because view IDs, bundle names, and menu destinations
+share a global router namespace. For example, `router-tool` plus `devices` becomes
+`router-tool-devices`; `--parent devices` and `view remove devices` accept the same
+short form.
+
+`view remove` cannot remove the primary page or a page that still has declared
+children. It preserves files by default so a mistaken manifest edit is reversible;
+`--delete-files` removes only files no longer referenced by another view.
 
 ## Platform Preflight
 
@@ -116,7 +146,7 @@ the package manager.
 ```bash
 glplugin build
 glplugin package
-glplugin inspect dist/gl-sdk4-ui-airbnb-radar_1.0.0_all.ipk
+glplugin inspect dist/gl-sdk4-ui-router-tool_1.0.0_all.ipk
 glplugin install --no-build
 glplugin uninstall
 ```
@@ -146,7 +176,7 @@ Examples:
 
 ```bash
 glplugin build --help
-glplugin --cwd ../airbnb-radar check --json
+glplugin --cwd ../router-tool check --json
 glplugin doctor --json
 ```
 

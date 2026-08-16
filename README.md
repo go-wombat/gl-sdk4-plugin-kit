@@ -36,6 +36,9 @@ glplugin init my-router-tool --profile full-stack
 cd my-plugin
 npm install
 
+# Add a second page under the plugin's main menu item
+glplugin view add details --title "Details"
+
 # Save a project-local router alias (no password is stored)
 glplugin target add beryl root@192.168.8.1 --use
 
@@ -65,6 +68,7 @@ glplugin uninstall
 | Command | Description |
 |---------|-------------|
 | `glplugin init <name> [--profile ui-only\|full-stack]` | Scaffold a UI-only or full-stack plugin project |
+| `glplugin view add\|list\|remove` | Manage the plugin's Vue pages and menu entries |
 | `glplugin check [--strict]` | Validate project files, hooks, and toolchain |
 | `glplugin capabilities` | List valid manifest capability IDs and read-only RPC probes |
 | `glplugin build` | Build plugin (webpack + gzip) |
@@ -277,6 +281,13 @@ hooks. The optional `views` array packages multiple native pages; omitting it
 keeps the single `src/index.vue` plus `menu.json` convention. Existing
 pre-manifest projects using `package.json.pluginName/glPlugin`
 remain readable through a legacy adapter.
+
+Use `glplugin view add <id>` to create a child page under the primary menu item,
+or pass `--top-level` to create an independent top-level page. `glplugin view list`
+shows the declared pages. `glplugin view remove <id>` updates the manifest but
+keeps source and menu files unless `--delete-files` is explicitly supplied. Short
+IDs are automatically namespaced: in `my-plugin`, `view add details` declares the
+globally safe view ID `my-plugin-details` while keeping `src/details.vue`.
 
 `glplugin package` also writes `Installed-Size`, `SourceName`,
 `X-GL-Firmware-Min`, `X-GL-UI-Contract`, and the standard OpenWrt lifecycle

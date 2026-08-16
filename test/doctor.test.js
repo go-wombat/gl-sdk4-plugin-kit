@@ -171,9 +171,9 @@ test('menu verification finds nested plugin entries without relying on client hi
   const result = {
     menus: [
       { view: 'overview' },
-      { view: 'applications', children: [{ view: 'airbnb-radar' }] },
+      { view: 'applications', children: [{ view: 'router-tool' }] },
     ],
   };
-  assert.equal(menuContainsView(result, 'airbnb-radar'), true);
+  assert.equal(menuContainsView(result, 'router-tool'), true);
   assert.equal(menuContainsView(result, 'missing-plugin'), false);
 });

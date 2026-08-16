@@ -5,6 +5,24 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-16
+
+### Added
+
+- `glplugin view add`, `view list`, and `view remove` commands for safely managing
+  multi-view manifests, Vue entry files, and level 1/2 menu entries.
+
+### Changed
+
+- Short page IDs created through the CLI are automatically prefixed with the
+  primary plugin ID to avoid collisions in the router's global view namespace.
+
+### Validation
+
+- A three-page fixture was built, packaged, installed, verified through
+  `ui.get_menu_list`, evaluated as Vue components, and removed on a live GL-MT3000
+  running firmware 4.8.1 `release8`.
+
 ## [0.5.0] - 2026-08-16
 
 ### Added
@@ -97,7 +115,8 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
   4.8.1 `release8`, including full-stack install, backend execution, development
   redeploy, and package cleanup.
 
-[Unreleased]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.2.0...v0.3.0

@@ -7,6 +7,9 @@ Each plugin registers a sidebar menu entry by placing a JSON file in
 `gl-sdk4-ui-{name}.json` and contains a single JSON object describing
 the menu item.
 
+For manifest projects, prefer `glplugin view add`, `glplugin view list`, and
+`glplugin view remove` over editing the `views` array and menu files manually.
+
 ---
 
 ## Fields
@@ -115,7 +118,7 @@ fallback.
 
 - The admin panel reads all JSON files from the menu directory on load and
   merges them into the sidebar.
-- Index values should avoid collicting with built-in firmware menu entries.
+- Index values should avoid conflicting with built-in firmware menu entries.
   Values of 80 and above are generally safe for custom plugins.
 - The `view` field is used both for routing and for locating the JS bundle,
   so it must be consistent across the menu file and the build output.

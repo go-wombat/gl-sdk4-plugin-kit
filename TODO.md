@@ -21,6 +21,7 @@
 - [x] Add build-and-deploy, install, uninstall, and watch workflows
 - [x] Use one feature-gated capability catalog for doctor and router tests
 - [x] Define stable usage, validation, connectivity, and runtime exit codes
+- [x] Add safe CLI commands for multi-view page and menu management
 
 ## Release readiness
 
@@ -35,7 +36,7 @@
 - [x] Define `ui-only` and `full-stack` package profiles
 - [x] Add a router filesystem overlay to generated packages
 - [x] Support backend package dependencies and custom lifecycle hooks
-- [ ] Use Airbnb Radar as the full-stack reference plugin
+- [ ] Add a generic full-stack reference plugin
 
 ## Firmware compatibility
 
