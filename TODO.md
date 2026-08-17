@@ -22,6 +22,7 @@
 - [x] Use one feature-gated capability catalog for doctor and router tests
 - [x] Define stable usage, validation, connectivity, and runtime exit codes
 - [x] Add safe CLI commands for multi-view page and menu management
+- [x] Make generated projects pin their local toolkit and support `init --install`
 
 ## Release readiness
 

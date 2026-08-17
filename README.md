@@ -28,18 +28,17 @@ it is not inferred from a model name or a `4.x` version string.
 ## Quick Start
 
 ```bash
-# Install the CLI
+# Install the CLI once
 npm install --global gl-sdk4-plugin-kit
 
-# Create a UI-only plugin (default)
-glplugin init my-plugin
+# Create a self-contained UI-only plugin and install its dependencies
+glplugin init my-plugin --install
 
 # Or create a working Vue + session-protected CGI + UCI package
-glplugin init my-router-tool --profile full-stack
+glplugin init my-router-tool --profile full-stack --install
 
 # Prepare it
 cd my-plugin
-npm install
 
 # Add a second page under the plugin's main menu item
 glplugin view add details --title "Details"
@@ -72,7 +71,7 @@ glplugin uninstall
 
 | Command | Description |
 |---------|-------------|
-| `glplugin init <name> [--profile ui-only\|full-stack]` | Scaffold a UI-only or full-stack plugin project |
+| `glplugin init <name> [--profile ui-only\|full-stack] [--install]` | Scaffold a self-contained UI-only or full-stack plugin project |
 | `glplugin view add\|list\|remove` | Manage the plugin's Vue pages and menu entries |
 | `glplugin compatibility capture\|verify` | Capture redacted metadata and verify it against the matching admin bundle |
 | `glplugin check [--strict]` | Validate project files, hooks, and toolchain |
@@ -95,6 +94,10 @@ glplugin uninstall
 All commands support `--cwd`; finite commands support `--json`, `--quiet`, and
 `--verbose`. See the [CLI workflow reference](docs/cli.md) for targets, precedence,
 machine output, and exit codes.
+
+Generated projects pin the exact `gl-sdk4-plugin-kit` version that created them,
+so their npm scripts use a project-local CLI instead of depending on a later global
+upgrade. Omit `--install` when dependency installation must be performed separately.
 
 ### Router authentication and doctor
 

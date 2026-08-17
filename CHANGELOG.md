@@ -5,6 +5,16 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+
+- `glplugin init --install` for optional one-command project scaffolding and
+  dependency installation without shell interpolation.
+
+### Changed
+
+- Generated projects pin the exact toolkit version that created them, so npm
+  scripts no longer depend on a globally installed `glplugin` after scaffolding.
+
 ## [0.8.0] - 2026-08-17
 
 ### Added

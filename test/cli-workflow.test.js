@@ -37,6 +37,13 @@ test('command help is side-effect free and global options parse consistently', a
   assert.match(stdout.value, /Usage: glplugin build/);
   assert.doesNotMatch(stdout.value + stderr.value, /Building plugin|No gl-plugin/);
 
+  const initHelp = memoryStream();
+  assert.equal(await cli.run(
+    ['init', '--help'],
+    { cwd: repositoryRoot, stdout: initHelp, stderr: memoryStream() }
+  ), 0);
+  assert.match(initHelp.value, /init <name>.*--install/);
+
   const parsed = cli.parseGlobalArgs([
     '--cwd', 'test', 'doctor', '--json', '--quiet', 'router.local', '--https',
   ], repositoryRoot);

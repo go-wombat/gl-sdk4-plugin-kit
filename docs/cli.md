@@ -6,9 +6,8 @@ router target. It never stores router passwords.
 ## First Run
 
 ```bash
-glplugin init router-tool --profile full-stack
+glplugin init router-tool --profile full-stack --install
 cd router-tool
-npm install
 
 glplugin target add beryl root@192.168.8.1 --use
 glplugin check
@@ -21,6 +20,12 @@ The generated full-stack page immediately calls its packaged, session-protected
 CGI endpoint and displays UCI state plus router uptime. This keeps the first
 install executable end to end; replace the example response with product behavior
 rather than wiring the frontend, session validation, and backend from scratch.
+
+Every generated project pins the exact toolkit version that created it in
+`devDependencies`. `--install` runs `npm install` immediately without a shell and
+creates the lockfile; omit the flag when installation needs to happen later or in
+an offline environment. An install failure leaves the generated project intact and
+reports its path instead of deleting source files.
 
 `install` runs project checks, builds the view, creates the `.ipk`, performs a
 strict router platform preflight, uploads it to `/tmp`, and invokes `opkg install`.

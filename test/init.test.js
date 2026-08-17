@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('node:test');
 const init = require('../lib/init');
+const toolkitPackage = require('../package.json');
 const {
   createAuthStubPath,
   localizeCgi,
@@ -37,6 +38,7 @@ test('init creates a manifest-based ui-only project from one template', function
   assert.deepEqual(pkg.overrides, {
     '@vue/component-compiler-utils': { postcss: '^8.5.23' },
   });
+  assert.equal(pkg.devDependencies['gl-sdk4-plugin-kit'], toolkitPackage.version);
   assert.equal(manifest.id, 'foo-bar-plugin');
   assert.equal(manifest.profile, 'ui-only');
   assert.deepEqual(manifest.package, {
@@ -127,10 +129,57 @@ test('init rejects empty and conflicting names with controlled errors', function
   );
   assert.deepEqual(
     init.parseInitArgs(['cli-fixture', '--profile', 'full-stack']),
-    { name: 'cli-fixture', profile: 'full-stack' }
+    { install: false, name: 'cli-fixture', profile: 'full-stack' }
+  );
+  assert.deepEqual(
+    init.parseInitArgs(['cli-fixture', '--install']),
+    { install: true, name: 'cli-fixture', profile: 'ui-only' }
   );
   assert.throws(
     () => init.parseInitArgs(['cli-fixture', '--unknown']),
     /Unknown init option/
   );
+});
+
+test('init optionally installs pinned dependencies without a shell', function(t) {
+  const cwd = makeTempDir('glplugin-init-install-');
+  t.after(function() { removeTempDir(cwd); });
+  const calls = [];
+
+  const result = init('ready-project', {
+    cwd,
+    install: true,
+    spawnSync(command, args, options) {
+      calls.push({ command, args, options });
+      return { status: 0, stderr: '' };
+    },
+  });
+
+  assert.equal(result.installed, true);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].command, process.platform === 'win32' ? 'npm.cmd' : 'npm');
+  assert.deepEqual(calls[0].args, ['install']);
+  assert.equal(calls[0].options.cwd, result.dir);
+  assert.equal(calls[0].options.shell, false);
+  assert.equal(calls[0].options.stdio, 'inherit');
+});
+
+test('init keeps a generated project when dependency installation fails', function(t) {
+  const cwd = makeTempDir('glplugin-init-install-failure-');
+  t.after(function() { removeTempDir(cwd); });
+  const projectDir = path.join(cwd, 'broken-project');
+
+  assert.throws(
+    () => init('broken-project', {
+      cwd,
+      install: true,
+      json: true,
+      spawnSync(command, args, options) {
+        assert.deepEqual(options.stdio, ['inherit', 'pipe', 'pipe']);
+        return { status: 17, stderr: 'registry unavailable\n' };
+      },
+    }),
+    /npm install failed with status 17.*registry unavailable.*Project remains at/m
+  );
+  assert.equal(fs.existsSync(path.join(projectDir, 'package.json')), true);
 });
