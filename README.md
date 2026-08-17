@@ -83,7 +83,7 @@ glplugin uninstall
 | `glplugin deploy [target\|host] [--build]` | Preflight the router, then optionally build and deploy UI assets via SCP |
 | `glplugin install [target\|host]` | Check, build, package, preflight, upload, and opkg install |
 | `glplugin uninstall [target\|host]` | Remove the project package from a router |
-| `glplugin dev [target\|host]` | Watch, rebuild, and deploy UI changes |
+| `glplugin dev [target\|host]` | Watch and sync UI-only or full-stack project changes |
 | `glplugin test [target\|host]` | Test plugin and capability connectivity against a router |
 | `glplugin doctor [target\|host]` | Detect model, firmware, auth algorithm, and read-only capabilities |
 | `glplugin extract [target\|host] [--insecure-host-key]` | Extract firmware evidence via SSH |

@@ -9,11 +9,18 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 
 - `glplugin init --install` for optional one-command project scaffolding and
   dependency installation without shell interpolation.
+- A hybrid full-stack development loop: initial package installation, fast UI
+  deploys for frontend changes, and debounced package reinstalls for overlay,
+  lifecycle, and package-manifest changes.
 
 ### Changed
 
 - Generated projects pin the exact toolkit version that created them, so npm
   scripts no longer depend on a globally installed `glplugin` after scaffolding.
+- `glplugin dev` now watches manifest-defined overlay and lifecycle paths and
+  reuses its verified SSH/platform session across both deploy strategies. Package
+  cycles force reinstall the unchanged development version so backend files apply;
+  failed package cycles stay dirty and retry without dropping file watchers.
 
 ## [0.8.0] - 2026-08-17
 

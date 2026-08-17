@@ -158,8 +158,18 @@ glplugin dev
 ```
 
 `deploy --build` validates, builds, and uploads the view, menu, and locale files.
-`dev` performs that cycle once and then watches source, locale, menu, manifest, and
-webpack configuration files with debounced rebuilds.
+For a UI-only project, `dev` performs that cycle once and then watches source,
+locale, menu, manifest, and webpack configuration files with debounced rebuilds.
+
+For a full-stack project, the first `dev` cycle builds and installs the complete
+`.ipk`. Later Vue, menu, locale, Babel, and webpack changes use the fast UI deploy
+path. Changes under the manifest-defined overlay or lifecycle paths reinstall the
+package, as do `gl-plugin.json` and `package.json` changes. If frontend and backend
+events share one debounce window, one package install handles both. Development
+installs use opkg's `--force-reinstall`, so backend changes apply even when the
+package version has not changed. If a package sync fails, the watchers remain
+active and the next relevant edit retries the package before fast UI deploys
+resume.
 
 Multi-step SSH commands open one temporary OpenSSH master connection per command,
 so `deploy`, `install`, and SSH extraction require one SSH authentication instead
@@ -168,9 +178,9 @@ until the watcher stops and reuses it for every rebuild. The connection is close
 on normal completion, failure, or `Ctrl+C`; no password is written to the target
 configuration.
 
-Development deploy uploads UI assets only. A full-stack overlay, dependencies, and
-lifecycle hooks require `glplugin install` because those files must be applied by
-the package manager.
+Direct `glplugin deploy` remains UI-only. The hybrid behavior belongs to `dev`,
+which applies backend files through the package manager instead of copying them
+around opkg ownership and lifecycle handling.
 
 ## Packages
 

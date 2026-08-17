@@ -39,6 +39,7 @@
 - [x] Support backend package dependencies and custom lifecycle hooks
 - [x] Add a generic full-stack reference plugin
 - [x] Ship tested browser and CGI auth helpers for sensitive custom endpoints
+- [x] Make `glplugin dev` install backend changes and fast-deploy UI changes
 
 ## Firmware compatibility
 

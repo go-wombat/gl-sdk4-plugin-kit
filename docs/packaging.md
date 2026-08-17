@@ -42,8 +42,12 @@ files and lifecycle scripts.
 
 `glplugin deploy` remains a fast frontend development command: it uploads the
 view, menu, and translations only. It prints a warning for `full-stack` projects.
-Build the `.ipk` and install it with opkg when testing overlay files, dependencies,
-conffiles, or lifecycle behavior.
+`glplugin dev` installs the complete package on its first full-stack cycle, uses
+that fast deploy path for later frontend changes, and reinstalls the package for
+overlay, lifecycle, or package-manifest changes. This preserves opkg ownership,
+conffiles, and lifecycle behavior without reinstalling for every Vue edit. Dev
+reinstalls explicitly use `--force-reinstall` because the package version normally
+stays unchanged during an editing session.
 
 A plugin can expose several native admin pages from one package. Declare each
 view's bundle ID, Vue entry, and menu file in `views`; the primary plugin `id`
