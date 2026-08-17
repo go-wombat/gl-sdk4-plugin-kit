@@ -5,6 +5,26 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-17
+
+### Added
+
+- A buildable generic full-stack reference plugin connecting a native Vue page
+  to a packaged read-only shell CGI backend and UCI conffile.
+- A firmware- and live-verified authentication contract for sensitive custom CGI
+  endpoints, including explicit SID transport, `gl-session` validation, and CSRF
+  boundaries.
+- Browser and plugin-scoped shell helpers implementing that contract for generated
+  full-stack projects.
+
+### Changed
+
+- `glplugin init --profile full-stack` now generates the same working UI-to-CGI
+  path instead of an unconnected libexec placeholder, with root-session validation
+  enabled by default.
+- Finite RPC commands log out in a cleanup path, and the standalone Node client
+  exposes an idempotent `close()` method.
+
 ## [0.7.0] - 2026-08-16
 
 ### Added
@@ -140,7 +160,8 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
   4.8.1 `release8`, including full-stack install, backend execution, development
   redeploy, and package cleanup.
 
-[Unreleased]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/go-wombat/gl-sdk4-plugin-kit/compare/v0.4.0...v0.5.0

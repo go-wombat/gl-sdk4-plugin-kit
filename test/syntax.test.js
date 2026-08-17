@@ -27,7 +27,16 @@ function schemaPatterns(value, result) {
 }
 
 test('all shipped JavaScript parses and runtime type definitions load', function() {
-  const files = ['bin', 'lib', 'scripts', 'template', 'examples'].flatMap(function(dir) {
+  const shippedDirectories = [
+    'bin',
+    'lib',
+    'scripts',
+    'template',
+    'examples/hello-world',
+    'examples/network-info',
+    'examples/full-stack',
+  ];
+  const files = shippedDirectories.flatMap(function(dir) {
     return javascriptFiles(path.join(root, dir));
   });
   files.forEach(function(file) {
@@ -45,6 +54,14 @@ test('all shipped JavaScript parses and runtime type definitions load', function
   schemaPatterns(schema, []).forEach((pattern) => assert.doesNotThrow(() => new RegExp(pattern)));
   run('sh', ['-n', path.join(root, 'template', 'profiles', 'full-stack', 'hooks', 'postinst')]);
   run('sh', ['-n', path.join(root, 'template', 'profiles', 'full-stack', 'hooks', 'prerm')]);
+  run('sh', ['-n', path.join(
+    root, 'template', 'profiles', 'full-stack', 'overlay', 'usr', 'libexec',
+    '__PLUGIN_ID__', 'admin-session.sh'
+  )]);
+  run('sh', ['-n', path.join(
+    root, 'examples', 'full-stack', 'overlay', 'usr', 'libexec', 'full-stack',
+    'admin-session.sh'
+  )]);
 
   const compilerUtilsDir = path.dirname(
     require.resolve('@vue/component-compiler-utils/package.json')

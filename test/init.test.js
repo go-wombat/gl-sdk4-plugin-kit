@@ -1,11 +1,18 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
 const fs = require('fs');
 const path = require('path');
 const test = require('node:test');
 const init = require('../lib/init');
-const { makeTempDir, removeTempDir } = require('./helpers');
+const {
+  createAuthStubPath,
+  localizeCgi,
+  makeTempDir,
+  parseCgiResponse,
+  removeTempDir,
+} = require('./helpers');
 
 function allFiles(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(function(entry) {
@@ -60,20 +67,47 @@ test('init creates a full-stack overlay with executable backend and lifecycle ho
   const result = init('router-tools', { cwd, profile: 'full-stack' });
   const manifest = JSON.parse(fs.readFileSync(path.join(result.dir, 'gl-plugin.json'), 'utf8'));
   const backend = path.join(
-    result.dir, 'overlay', 'usr', 'libexec', 'router-tools', 'example-backend'
+    result.dir, 'overlay', 'www', 'cgi-bin', 'gl-sdk4-ui-router-tools'
   );
+  const authHelper = path.join(
+    result.dir, 'overlay', 'usr', 'libexec', 'router-tools', 'admin-session.sh'
+  );
+  const source = fs.readFileSync(path.join(result.dir, 'src', 'index.vue'), 'utf8');
 
   assert.equal(result.profile, 'full-stack');
   assert.equal(manifest.profile, 'full-stack');
   assert.equal(manifest.overlay, 'overlay');
+  assert.deepEqual(manifest.package.depends, [
+    'libc', 'gl-sdk4-ui-core', 'gl-oui-rpc', 'ubus', 'jsonfilter', 'uci',
+  ]);
   assert.deepEqual(manifest.package.conffiles, ['/etc/config/router-tools']);
   assert.deepEqual(manifest.lifecycle, {
     postinst: 'hooks/postinst',
     prerm: 'hooks/prerm',
   });
   assert.ok(fs.statSync(backend).mode & 0o100);
+  assert.ok(fs.statSync(authHelper).mode & 0o100);
   assert.ok(fs.statSync(path.join(result.dir, 'hooks', 'postinst')).mode & 0o100);
-  assert.match(fs.readFileSync(backend, 'utf8'), /"status":"ok"/);
+  assert.match(source, /fetch\('\/cgi-bin\/gl-sdk4-ui-router-tools'/);
+  assert.match(source, /createAdminSessionHeaders/);
+
+  const localBackend = localizeCgi(
+    backend, authHelper, path.join(cwd, 'router-tools-cgi-under-test')
+  );
+  const backendResult = spawnSync('sh', [localBackend], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      HTTP_X_GL_ADMIN_TOKEN: 'A'.repeat(32),
+      PATH: createAuthStubPath(cwd),
+    },
+  });
+  assert.equal(backendResult.status, 0, backendResult.stderr);
+  const payload = parseCgiResponse(backendResult.stdout).body;
+  assert.equal(payload.status, 'ok');
+  assert.equal(payload.backend, 'shell-cgi');
+  assert.equal(payload.enabled, true);
+  assert.equal(Number.isInteger(payload.uptimeSeconds), true);
 });
 
 test('init rejects empty and conflicting names with controlled errors', function(t) {

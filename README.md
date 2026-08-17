@@ -34,7 +34,7 @@ npm install --global gl-sdk4-plugin-kit
 # Create a UI-only plugin (default)
 glplugin init my-plugin
 
-# Or create a package with router-side files and lifecycle hooks
+# Or create a working Vue + session-protected CGI + UCI package
 glplugin init my-router-tool --profile full-stack
 
 # Prepare it
@@ -98,7 +98,7 @@ machine output, and exit codes.
 
 ### Router authentication and doctor
 
-This authentication is only for developer-side CLI commands such as `doctor`, `test`, and RPC extraction. A plugin page loaded inside the GL.iNet admin UI continues to use the existing admin session and does not show a second login.
+This authentication is only for developer-side CLI commands such as `doctor`, `test`, and RPC extraction. A plugin page loaded inside the GL.iNet admin UI continues to use the existing admin session and does not show a second login. Standard `$rpcRequest` calls are authorized by the firmware; plugin-owned CGI endpoints must [validate that browser session explicitly](docs/backend-auth.md).
 
 Router passwords are never accepted as positional CLI arguments. Interactive commands use a hidden TTY prompt; automation can provide one password line on stdin:
 
@@ -225,21 +225,25 @@ const { createClient } = require('gl-sdk4-plugin-kit/lib/api-client');
 
 const client = await createClient('192.168.8.1', 'your-password');
 
-// Read
-const info = await client.system.getInfo();
-const clients = await client.clients.getList();
-const vpn = await client.vpnClient.getStatus();
+try {
+  // Read
+  const info = await client.system.getInfo();
+  const clients = await client.clients.getList();
+  const vpn = await client.vpnClient.getStatus();
 
-// Write
-await client.wifi.setConfig({ ... });
-await client.firewall.addPortForward({ name: 'SSH', proto: 'tcp', dest_ip: '192.168.8.100', dest_port: '22', src_dport: '2222' });
+  // Write
+  await client.wifi.setConfig({ ... });
+  await client.firewall.addPortForward({ name: 'SSH', proto: 'tcp', dest_ip: '192.168.8.100', dest_port: '22', src_dport: '2222' });
 
-// VPN control (use set_tunnel, not stop)
-const tunnels = await client.vpnClient.getTunnel();
-tunnels.tunnels[0].enabled = false;
-await client.rpc('vpn-client', 'set_tunnel', tunnels.tunnels[0]); // disable
-tunnels.tunnels[0].enabled = true;
-await client.rpc('vpn-client', 'set_tunnel', tunnels.tunnels[0]); // re-enable
+  // VPN control (use set_tunnel, not stop)
+  const tunnels = await client.vpnClient.getTunnel();
+  tunnels.tunnels[0].enabled = false;
+  await client.rpc('vpn-client', 'set_tunnel', tunnels.tunnels[0]); // disable
+  tunnels.tunnels[0].enabled = true;
+  await client.rpc('vpn-client', 'set_tunnel', tunnels.tunnels[0]); // re-enable
+} finally {
+  await client.close();
+}
 ```
 
 ## Vue API Mixin
@@ -340,6 +344,7 @@ wrappers. Menu files are package-owned and are not marked as `conffiles`. See
 
 - [hello-world](examples/hello-world/) — Minimal plugin showing device info
 - [network-info](examples/network-info/) — Plugin with tables and multiple cards
+- [full-stack](examples/full-stack/) — Vue page calling a packaged session-protected shell CGI backend
 
 ## Extract Components from Any Firmware
 

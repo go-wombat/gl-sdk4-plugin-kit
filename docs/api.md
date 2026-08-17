@@ -76,9 +76,13 @@ handling automatically. Use `$axios` only when you need full control.
 ## Authentication
 
 - On login, the backend returns a session ID (SID).
-- The SID is stored as a cookie (`Admin-Token`) and in the Vuex store.
-- `$rpcRequest` replaces the `"sid"` placeholder with the real token automatically.
+- The SID is stored as a cookie (`Admin-Token`) and is available through the
+  admin runtime's `window.$getCookie` helper.
+- `$rpcRequest` reads that cookie and replaces the `"sid"` placeholder with the
+  real token automatically.
 - Sessions expire after inactivity; the admin panel handles re-authentication.
+- This protects `/rpc`, not an arbitrary plugin-owned CGI endpoint. See
+  [Authentication for Custom Backends](backend-auth.md).
 
 ### Login Algorithm (for CLI tools)
 
@@ -384,7 +388,7 @@ this.$rpcRequest('call', ['sid', 'cable', 'get_status', {}])
 | `this.$locale()` | Get or set current locale |
 | `this.$setTheme(name)` | Switch UI theme |
 | `this.$message({ type, message })` | Show toast notification |
-| `this.$store` | Vuex store (contains `sid`, user info) |
+| `this.$store` | Vuex router state (available keys vary by firmware) |
 | `this.$router` | Vue Router instance |
 | `this.$route` | Current route object |
 
@@ -439,18 +443,23 @@ const { createClient } = require('gl-sdk4-plugin-kit/lib/api-client');
 
 const client = await createClient('192.168.8.1', 'password');
 
-// ~300 methods available via namespaced API (some are feature-gated)
-const info = await client.system.getInfo();
-const clients = await client.clients.getList();
-const vpn = await client.vpnClient.getStatus();
-await client.firewall.addPortForward({ name: 'SSH', ... });
+try {
+  // ~300 methods available via namespaced API (some are feature-gated)
+  const info = await client.system.getInfo();
+  const clients = await client.clients.getList();
+  const vpn = await client.vpnClient.getStatus();
+  await client.firewall.addPortForward({ name: 'SSH', ... });
 
-// Raw RPC for edge cases
-const result = await client.rpc('custom-module', 'custom_method', { key: 'value' });
+  // Raw RPC for edge cases
+  const result = await client.rpc('custom-module', 'custom_method', { key: 'value' });
+} finally {
+  await client.close();
+}
 ```
 
 Authentication uses GL.iNet's challenge-response protocol
-(MD5 crypt + SHA256, documented in the Authentication section above).
+(Unix crypt selected by `challenge.alg`, followed by SHA-256). `close()` logs out
+the router session and is safe to call more than once.
 
 ---
 

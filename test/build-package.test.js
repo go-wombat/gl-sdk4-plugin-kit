@@ -209,6 +209,11 @@ test('full-stack package preserves overlay, conffiles, and OpenWrt lifecycle dis
 
   const packageResult = packagePlugin({ cwd: project.dir });
   assert.equal(packageResult.profile, 'full-stack');
+  const inspection = inspectPackage(packageResult.ipkFile);
+  assert.equal(
+    inspection.dataFiles.includes('usr/libexec/full-stack-fixture/admin-session.sh'),
+    true
+  );
 
   const outer = path.join(cwd, 'outer');
   const control = path.join(cwd, 'control');
@@ -218,11 +223,15 @@ test('full-stack package preserves overlay, conffiles, and OpenWrt lifecycle dis
   extractTarGz(path.join(outer, 'data.tar.gz'), data);
 
   const backend = path.join(
-    data, 'usr', 'libexec', 'full-stack-fixture', 'example-backend'
+    data, 'www', 'cgi-bin', 'gl-sdk4-ui-full-stack-fixture'
   );
   assert.ok(fs.existsSync(path.join(data, 'etc', 'config', 'full-stack-fixture')));
   assert.ok(fs.statSync(backend).mode & 0o100);
-  assert.match(fs.readFileSync(backend, 'utf8'), /"status":"ok"/);
+  assert.match(fs.readFileSync(backend, 'utf8'), /"backend":"shell-cgi"/);
+  assert.match(
+    fs.readFileSync(path.join(control, 'control'), 'utf8'),
+    /Depends: libc, gl-sdk4-ui-core, gl-oui-rpc, ubus, jsonfilter, uci/
+  );
   assert.equal(
     fs.readFileSync(path.join(control, 'conffiles'), 'utf8'),
     '/etc/config/full-stack-fixture\n'

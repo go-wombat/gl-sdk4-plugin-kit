@@ -36,7 +36,8 @@
 - [x] Define `ui-only` and `full-stack` package profiles
 - [x] Add a router filesystem overlay to generated packages
 - [x] Support backend package dependencies and custom lifecycle hooks
-- [ ] Add a generic full-stack reference plugin
+- [x] Add a generic full-stack reference plugin
+- [x] Ship tested browser and CGI auth helpers for sensitive custom endpoints
 
 ## Firmware compatibility
 
@@ -61,3 +62,4 @@
 - [x] Add a hidden password prompt and `--password-stdin`
 - [x] Replace remaining SSH shell interpolation with argument-based process execution
 - [x] Reuse one authenticated SSH connection across deploy, install, extract, and dev cycles
+- [x] Log out finite RPC command sessions and expose `close()` on the Node API client

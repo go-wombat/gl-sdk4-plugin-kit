@@ -4,7 +4,8 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const catalog = require('../lib/api-catalog');
 const { createGlApi, resolveRpcRequest } = require('../lib/api');
-const { createApiClient } = require('../lib/api-client');
+const auth = require('../lib/auth');
+const { createApiClient, createClient } = require('../lib/api-client');
 const safeRpcMixin = require('../lib/safe-rpc-mixin');
 
 function shape(api) {
@@ -54,6 +55,31 @@ test('Node API uses the same module and snake_case mapping', async function() {
 
   assert.deepEqual(await api.vpnClient.getAllConfigList(), { ok: true });
   assert.deepEqual(calls, [['vpn-client', 'get_all_config_list', {}]]);
+});
+
+test('authenticated Node client closes its session once and rejects later RPC calls', async function(t) {
+  const originals = { login: auth.login, call: auth.call, logout: auth.logout };
+  t.after(() => Object.assign(auth, originals));
+  const calls = [];
+  const logouts = [];
+  auth.login = async () => ({ sid: 'private-session', auth: { alg: '6', name: 'sha512-crypt' } });
+  auth.call = async (host, sid, module, method, params, options) => {
+    calls.push({ host, sid, module, method, params, options });
+    return { ok: true };
+  };
+  auth.logout = async (host, sid, options) => {
+    logouts.push({ host, sid, options });
+  };
+
+  const options = { timeout: 2500 };
+  const client = await createClient('router.test', 'private-password', 'root', options);
+  assert.deepEqual(await client.system.getInfo(), { ok: true });
+  await client.close();
+  await client.close();
+
+  assert.equal(calls.length, 1);
+  assert.deepEqual(logouts, [{ host: 'router.test', sid: 'private-session', options }]);
+  await assert.rejects(client.system.getInfo(), /API client is closed/);
 });
 
 test('Vue RPC adapter prefers the modern runtime and has an explicit legacy fallback', async function() {

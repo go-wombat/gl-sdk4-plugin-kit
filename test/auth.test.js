@@ -11,6 +11,7 @@ const {
   call,
   createLoginHash,
   login,
+  logout,
   normalizeRouterUrl,
   unixCrypt,
 } = require('../lib/auth');
@@ -95,6 +96,9 @@ test('HTTP RPC login and authenticated calls preserve structured errors', async 
       } else if (body.method === 'login') {
         assert.equal(body.params.hash, vectors.vectors[0].login_hash);
           payload = { jsonrpc: '2.0', id: body.id, result: { sid: 'test-session' } };
+      } else if (body.method === 'logout') {
+        assert.deepEqual(body.params, { sid: 'test-session' });
+        payload = { jsonrpc: '2.0', id: body.id, result: {} };
       } else if (body.params[1] === 'system') {
           payload = { jsonrpc: '2.0', id: body.id, result: { firmware_version: '4.9.0' } };
       } else {
@@ -125,7 +129,11 @@ test('HTTP RPC login and authenticated calls preserve structured errors', async 
     assert.deepEqual(error.data, { module: 'missing' });
     return true;
   });
-  assert.deepEqual(requests.map((request) => request.method), ['challenge', 'login', 'call', 'call']);
+  assert.deepEqual(await logout(host, session.sid, options), {});
+  assert.deepEqual(
+    requests.map((request) => request.method),
+    ['challenge', 'login', 'call', 'call', 'logout']
+  );
 });
 
 test('router URLs preserve explicit ports and reject embedded credentials', function() {

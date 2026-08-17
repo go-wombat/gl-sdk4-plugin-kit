@@ -16,6 +16,26 @@ contains only Node.js build metadata, including the package version used for the
 `overlay` directory into the package root. Use it for shell/Lua backends, UCI
 config, CGI files, init scripts, and other router-side assets.
 
+`glplugin init <name> --profile full-stack` generates a working version of this
+contract: the profile-specific Vue page calls `/cgi-bin/gl-sdk4-ui-<name>`, while
+the endpoint validates the current root admin session, reads
+`/etc/config/<name>`, and returns a small JSON response.
+
+The buildable [`examples/full-stack`](../examples/full-stack/) project shows the
+smallest complete UI-to-backend path. It installs an executable below
+`/www/cgi-bin`, reads a packaged UCI conffile, and returns JSON to the native Vue
+page without starting a daemon. Official MT3000 4.8.1 and MT6000 4.9.1 firmware
+route `/cgi-bin` from nginx to `fcgiwrap`; both ship that contract in the
+`gl-oui-rpc` package. The generated package declares `gl-oui-rpc`, `ubus`, and
+`jsonfilter` for routing and session validation.
+
+The firmware's nginx access hook handles routing and initialization state, not
+application authorization. The reference endpoint is read-only, but still uses
+the generated browser and shell helpers to validate the admin session. Preserve
+that gate when replacing the example response with private data or write
+operations. See [Authentication for Custom Backends](backend-auth.md); page
+visibility alone is not authorization for `/cgi-bin/*`.
+
 Neither profile changes router network configuration during build or package.
 Installing a full-stack package only performs actions explicitly present in its
 files and lifecycle scripts.

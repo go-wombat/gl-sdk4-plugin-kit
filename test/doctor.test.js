@@ -13,12 +13,16 @@ const { makeTempDir, removeTempDir } = require('./helpers');
 
 test('doctor reports model, firmware, auth, and feature-gated capabilities', async function() {
   const calls = [];
+  const logouts = [];
   const report = await inspectRouter('192.0.2.1', 'fixture-password', {
     username: 'root',
     requiredCapabilities: ['wifi'],
     requiredMenuViews: ['fixture-main', 'fixture-tools'],
     login: async function() {
       return { sid: 'private-session', auth: { alg: '6', name: 'sha512-crypt' } };
+    },
+    logout: async function(host, sid, options) {
+      logouts.push({ host, sid, options });
     },
     inspectPlatform: async function() {
       return {
@@ -84,11 +88,45 @@ test('doctor reports model, firmware, auth, and feature-gated capabilities', asy
   ]);
   assert.equal(calls.includes('adguardhome.get_config'), false);
   assert.equal(calls.includes('fan.get_status'), false);
+  assert.deepEqual(logouts, [{
+    host: '192.0.2.1',
+    sid: 'private-session',
+    options: {
+      https: undefined,
+      insecure: undefined,
+      timeout: undefined,
+      transport: undefined,
+      spawnSync: undefined,
+    },
+  }]);
   assert.doesNotMatch(JSON.stringify(report), /private-session|fixture-password/);
   assert.match(formatDoctorReport(report), /Firmware: 4\.8\.1 \(testing\)/);
   assert.match(formatDoctorReport(report), /Deep Packet Inspection \(4\.9\+\): unavailable/);
   assert.match(formatDoctorReport(report), /Required capabilities[\s\S]*\[PASS\] wifi: available/);
   assert.match(formatDoctorReport(report), /Menu view fixture-tools: loaded/);
+});
+
+test('doctor attempts logout after RPC failure without masking the original report', async function() {
+  let logoutCalls = 0;
+  const report = await inspectRouter('router.test', 'fixture-password', {
+    login: async () => ({ sid: 'private-session', auth: { alg: '1', name: 'md5-crypt' } }),
+    call: async () => {
+      throw new Error('core RPC failed');
+    },
+    logout: async () => {
+      logoutCalls += 1;
+      throw new Error('logout failed');
+    },
+  });
+
+  assert.equal(logoutCalls, 1);
+  assert.equal(report.ok, false);
+  assert.deepEqual(report.errors.map((error) => error.rpc), [
+    'system.get_info',
+    'system.get_status',
+    'session.logout',
+  ]);
+  assert.doesNotMatch(JSON.stringify(report), /private-session|fixture-password/);
 });
 
 test('doctor loads required capabilities from the current plugin manifest', async function(t) {

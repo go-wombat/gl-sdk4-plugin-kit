@@ -28,6 +28,48 @@ function removeTempDir(dir) {
   fs.rmSync(dir, { recursive: true, force: true });
 }
 
+function createAuthStubPath(root) {
+  const bin = path.join(root, 'auth-bin');
+  fs.mkdirSync(bin, { recursive: true });
+  const ubus = path.join(bin, 'ubus');
+  const jsonfilter = path.join(bin, 'jsonfilter');
+  fs.writeFileSync(ubus, [
+    '#!/bin/sh',
+    '[ "${GL_AUTH_SESSION_STATUS:-valid}" = valid ] || exit 4',
+    'printf \'{"aclgroup":"%s"}\\n\' "${GL_AUTH_ACLGROUP:-root}"',
+    '',
+  ].join('\n'));
+  fs.writeFileSync(jsonfilter, [
+    '#!/bin/sh',
+    'printf \'%s\\n\' "${GL_AUTH_ACLGROUP:-root}"',
+    '',
+  ].join('\n'));
+  fs.chmodSync(ubus, 0o755);
+  fs.chmodSync(jsonfilter, 0o755);
+  return `${bin}:/usr/bin:/bin`;
+}
+
+function parseCgiResponse(output) {
+  const sections = String(output).split(/\r?\n\r?\n/);
+  return {
+    headers: sections[0],
+    body: JSON.parse(sections.slice(1).join('\n\n')),
+  };
+}
+
+function localizeCgi(cgi, authHelper, destination) {
+  const original = fs.readFileSync(cgi, 'utf8');
+  const quotedHelper = `'${authHelper.replace(/'/g, `'"'"'`)}'`;
+  const localized = original.replace(
+    /^\. \/usr\/libexec\/[^\n]+\/admin-session\.sh$/m,
+    `. ${quotedHelper}`
+  );
+  if (localized === original) throw new Error(`CGI auth helper import not found: ${cgi}`);
+  fs.writeFileSync(destination, localized);
+  fs.chmodSync(destination, 0o755);
+  return destination;
+}
+
 function compatiblePlatform(overrides) {
   return {
     source: 'test-fixture',
@@ -63,8 +105,11 @@ function compatiblePlatform(overrides) {
 
 module.exports = {
   compatiblePlatform,
+  createAuthStubPath,
   extractTarGz,
+  localizeCgi,
   makeTempDir,
+  parseCgiResponse,
   removeTempDir,
   run,
 };

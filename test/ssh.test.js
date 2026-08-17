@@ -308,6 +308,7 @@ test('RPC extraction does not print or persist credentials and redacts response 
   const cwd = makeTempDir('glplugin-extract-rpc-');
   t.after(() => removeTempDir(cwd));
   const logs = [];
+  const logouts = [];
   const result = await extract(['root@router.local', '--rpc', '--password-stdin'], {
     call: async (host, sid, module, method) => {
       assert.equal(host, 'router.local');
@@ -323,6 +324,9 @@ test('RPC extraction does not print or persist credentials and redacts response 
     cwd,
     log(value) { logs.push(value); },
     login: async () => ({ sid: 'private-session-id' }),
+    logout: async (host, sid, options) => {
+      logouts.push({ host, sid, options });
+    },
     now: () => new Date('2026-08-15T00:00:00.000Z'),
     readRouterPassword: async () => 'private-password',
   });
@@ -339,12 +343,18 @@ test('RPC extraction does not print or persist credentials and redacts response 
   });
   assert.equal(result.result.firmware, '4.9.0');
   assert.deepEqual(result.result.confirmedMethods, ['system.get_info']);
+  assert.deepEqual(logouts, [{
+    host: 'router.local',
+    sid: 'private-session-id',
+    options: { https: false, insecure: false },
+  }]);
 });
 
 test('RPC extraction resolves a configured target and applies its transport defaults', async function(t) {
   const cwd = makeTempDir('glplugin-extract-target-');
   t.after(() => removeTempDir(cwd));
   let loginCall;
+  let logoutCall;
   const result = await extract(['--rpc'], {
     call: async (host, sid, module, method, params, transport) => {
       assert.equal(host, 'rpc.router.local');
@@ -357,6 +367,9 @@ test('RPC extraction resolves a configured target and applies its transport defa
     login: async (...args) => {
       loginCall = args;
       return { sid: 'session' };
+    },
+    logout: async (...args) => {
+      logoutCall = args;
     },
     readRouterPassword: async () => 'private-password',
     resolveTarget() {
@@ -373,6 +386,9 @@ test('RPC extraction resolves a configured target and applies its transport defa
   assert.equal(loginCall[0], 'rpc.router.local');
   assert.equal(loginCall[2], 'admin');
   assert.deepEqual(loginCall[3], { https: true, insecure: true });
+  assert.deepEqual(logoutCall, [
+    'rpc.router.local', 'session', { https: true, insecure: true },
+  ]);
   assert.equal(result.result.firmware, '4.9.0');
 });
 

@@ -7,7 +7,9 @@ The developer CLI talks to routers through two independent transports:
 
 These controls apply to the developer CLI only. A plugin running inside the GL.iNet
 admin UI reuses the authenticated browser session and does not ask the user to log
-in again.
+in again. Standard RPC requests are authorized by the firmware. Plugin-owned CGI
+endpoints must perform the separate session validation described in
+[Authentication for Custom Backends](backend-auth.md).
 
 Project-local router aliases are stored in `.glpluginrc.json`. The file is ignored
 by generated projects and written with mode `0600`. Its schema does not permit

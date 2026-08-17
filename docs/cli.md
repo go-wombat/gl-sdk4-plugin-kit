@@ -17,6 +17,11 @@ glplugin doctor
 glplugin install
 ```
 
+The generated full-stack page immediately calls its packaged, session-protected
+CGI endpoint and displays UCI state plus router uptime. This keeps the first
+install executable end to end; replace the example response with product behavior
+rather than wiring the frontend, session validation, and backend from scratch.
+
 `install` runs project checks, builds the view, creates the `.ipk`, performs a
 strict router platform preflight, uploads it to `/tmp`, and invokes `opkg install`.
 Use `--no-build` to package and install an existing build artifact. The temporary
