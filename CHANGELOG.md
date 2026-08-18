@@ -5,6 +5,8 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-18
+
 ### Added
 
 - `glplugin init --install` for optional one-command project scaffolding and
