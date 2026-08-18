@@ -47,7 +47,9 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "prepack": "npm test"
+    "generate:types": "node scripts/generate-api-types.js",
+    "check:types": "node scripts/generate-api-types.js --check",
+    "prepack": "npm run check:types && npm test"
   },
   "bin": {
     "glplugin": "bin/glplugin"
@@ -56,8 +58,10 @@
     "index.js",
     "index.mjs",
     "index.d.ts",
+    "rpc-api.d.ts",
     "browser.d.ts",
     "bin/",
+    "scripts/generate-api-types.js",
     "lib/",
     "runtime/",
     "template/",

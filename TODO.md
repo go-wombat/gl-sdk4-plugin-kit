@@ -53,7 +53,7 @@
 ## API and types
 
 - [x] Publish a typed stable Node.js and browser package entrypoint
-- [ ] Generate `.d.ts` declarations from the shared RPC catalog and response fixtures
+- [x] Generate `.d.ts` declarations from the shared RPC catalog and response fixtures
 - [ ] Generate API documentation and test cases from the same catalog
 - [ ] Map extracted form validation to write-method parameter types
 - [ ] Document unverified and feature-gated methods explicitly

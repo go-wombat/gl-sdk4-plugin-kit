@@ -15,6 +15,8 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 - Typed public package entrypoints for the stable Node.js toolkit API and the
   browser-only RPC mixin, chart adapter, and admin-session helper.
 - Native ESM and CommonJS consumers resolve the same frozen toolkit namespaces.
+- Generated RPC declarations cover all catalog namespaces and methods, with
+  evidence-backed parameter, response, and observed response-key types.
 
 ### Changed
 

@@ -83,6 +83,24 @@ try {
 The generated namespaces preserve RPC rejection details. `close()` is idempotent
 and logs out the authenticated session.
 
+All catalog namespaces and methods are available through `GlSdk4Api`. Detailed
+parameter and response types come from the documented router evidence in
+`lib/types.js`; live response fixtures add known object keys without guessing their
+value types. Methods without sufficient evidence return `unknown` until their
+contract is documented.
+
+```ts
+const info = await client.system.getInfo();
+console.log(info.firmware_version);
+
+const load = await client.system.getLoad();
+console.log(load.memory_free); // key is known; value remains unknown
+```
+
+After changing the RPC catalog, JSDoc contracts, or response fixtures, run
+`npm run generate:types`. `npm run check:types` fails when committed declarations
+are stale and also runs automatically before npm packaging.
+
 ## Browser Entry
 
 Vue plugins must import the browser-only entry so webpack does not include Node.js

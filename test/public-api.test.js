@@ -51,6 +51,8 @@ test('package metadata publishes typed root and browser entrypoints', function()
   ]);
   assert.equal(fs.existsSync(path.join(root, 'index.d.ts')), true);
   assert.equal(fs.existsSync(path.join(root, 'browser.d.ts')), true);
+  assert.equal(fs.existsSync(path.join(root, 'rpc-api.d.ts')), true);
+  assert.equal(fs.existsSync(path.join(root, 'lib', 'types.d.ts')), true);
   assert.match(fs.readFileSync(path.join(root, 'index.d.ts'), 'utf8'), /export interface PluginProject/);
   assert.match(fs.readFileSync(path.join(root, 'browser.d.ts'), 'utf8'), /glApiMixin/);
   const publicDocs = [
@@ -119,4 +121,37 @@ test('packed npm artifact resolves root, browser, and legacy entrypoints', funct
     shell: false,
   });
   assert.equal(imported.status, 0, imported.stderr || imported.stdout);
+
+  const typedConsumer = path.join(temporary, 'consumer.ts');
+  fs.writeFileSync(typedConsumer, [
+    "import { api } from 'gl-sdk4-plugin-kit';",
+    'async function inspect(password: string): Promise<void> {',
+    "  const client = await api.createClient('192.168.8.1', password);",
+    '  const info = await client.system.getInfo();',
+    '  const firmware: string = info.firmware_version;',
+    '  const load = await client.system.getLoad();',
+    '  const memory: unknown = load.memory_free;',
+    '  void firmware;',
+    '  void memory;',
+    '}',
+    'void inspect;',
+    '',
+  ].join('\n'));
+  const typescriptPackageFile = require.resolve('typescript/package.json');
+  const typescriptPackage = require(typescriptPackageFile);
+  const tsc = path.resolve(path.dirname(typescriptPackageFile), typescriptPackage.bin.tsc);
+  const typechecked = spawnSync(process.execPath, [
+    tsc,
+    '--noEmit',
+    '--strict',
+    '--module', 'Node16',
+    '--moduleResolution', 'Node16',
+    '--target', 'ES2020',
+    typedConsumer,
+  ], {
+    cwd: temporary,
+    encoding: 'utf8',
+    shell: false,
+  });
+  assert.equal(typechecked.status, 0, typechecked.stderr || typechecked.stdout);
 });

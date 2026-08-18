@@ -1,3 +1,7 @@
+import type { GlSdk4Api } from './rpc-api';
+
+export * from './rpc-api';
+
 export type PluginProfile = 'ui-only' | 'full-stack';
 export type CheckStatus = 'pass' | 'warn' | 'fail';
 export type LogFunction = (message: string) => void;
@@ -12,7 +16,7 @@ export interface AuthInfo {
   name: string;
 }
 
-export interface ApiClient {
+export interface ApiClient extends GlSdk4Api {
   [key: string]: unknown;
   sid: string;
   host: string;
@@ -200,7 +204,7 @@ export const EXIT_CODES: Readonly<{
 export const version: string;
 
 export const api: Readonly<{
-  createApiClient(rpc: RpcFunction): Record<string, unknown>;
+  createApiClient(rpc: RpcFunction): GlSdk4Api;
   createClient(
     host: string,
     password: string,

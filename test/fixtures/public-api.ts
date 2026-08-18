@@ -1,5 +1,5 @@
 import sdk = require('../..');
-import { glApiMixin } from '../../browser';
+import { createGlApi, glApiMixin } from '../../browser';
 
 const check = sdk.project.check('.', { strict: true });
 const project = sdk.project.read('.');
@@ -33,12 +33,23 @@ async function inspectRouter(password: string): Promise<void> {
   const client = await sdk.api.createClient('192.168.8.1', password);
   try {
     const authName: string = client.auth.name;
-    await client.rpc('system', 'get_info', {});
+    const info = await client.system.getInfo();
+    const firmwareVersion: string = info.firmware_version;
+    const load = await client.system.getLoad();
+    const observedMemoryFree: unknown = load.memory_free;
+    await client.system.setPassword({
+      old_password: 'old',
+      new_password: 'new',
+    });
     void authName;
+    void firmwareVersion;
+    void observedMemoryFree;
   } finally {
     await client.close();
   }
 }
 
+const browserApi = createGlApi(async () => ({}));
+void browserApi.system.getInfo;
 glApiMixin.beforeCreate.call({});
 void inspectRouter;
