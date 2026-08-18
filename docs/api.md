@@ -436,12 +436,12 @@ const status = await this.rpc('vpn-client', 'get_status');
 
 ## Node.js API Client
 
-For scripts and CLI tools, use `lib/api-client.js`:
+For scripts and CLI tools, use the stable root API:
 
 ```js
-const { createClient } = require('gl-sdk4-plugin-kit/lib/api-client');
+const { api } = require('gl-sdk4-plugin-kit');
 
-const client = await createClient('192.168.8.1', 'password');
+const client = await api.createClient('192.168.8.1', 'password');
 
 try {
   // ~300 methods available via namespaced API (some are feature-gated)

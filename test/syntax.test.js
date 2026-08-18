@@ -62,6 +62,15 @@ test('all shipped JavaScript parses and runtime type definitions load', function
     root, 'examples', 'full-stack', 'overlay', 'usr', 'libexec', 'full-stack',
     'admin-session.sh'
   )]);
+  run(path.join(root, 'node_modules', '.bin', 'tsc'), [
+    '--noEmit',
+    '--strict',
+    '--module', 'Node16',
+    '--moduleResolution', 'Node16',
+    '--target', 'ES2020',
+    path.join(root, 'test', 'fixtures', 'public-api.ts'),
+    path.join(root, 'test', 'fixtures', 'public-api.mts'),
+  ]);
 
   const compilerUtilsDir = path.dirname(
     require.resolve('@vue/component-compiler-utils/package.json')

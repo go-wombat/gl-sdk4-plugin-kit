@@ -224,9 +224,9 @@ npm install gl-sdk4-plugin-kit
 ```
 
 ```js
-const { createClient } = require('gl-sdk4-plugin-kit/lib/api-client');
+const { api } = require('gl-sdk4-plugin-kit');
 
-const client = await createClient('192.168.8.1', 'your-password');
+const client = await api.createClient('192.168.8.1', 'your-password');
 
 try {
   // Read
@@ -258,7 +258,7 @@ need the Node package at runtime.
 For reference, the full mixin provides 49 namespaces with 326 methods. Calls preserve RPC rejections instead of converting failures to `null`:
 
 ```js
-const { glApiMixin } = require('gl-sdk4-plugin-kit/lib/api');
+const { glApiMixin } = require('gl-sdk4-plugin-kit/browser');
 
 export default {
   mixins: [glApiMixin],
@@ -328,6 +328,7 @@ wrappers. Menu files are package-owned and are not marked as `conffiles`. See
 
 - [Components Reference](docs/components.md) — 52 verified UI components on firmware 4.8.1 and the 4.9.0 beta6 delta
 - [CLI Workflow](docs/cli.md) - targets, check/build/install/dev workflows, JSON output, and exit codes
+- [Node.js Toolkit API](docs/node-api.md) - stable project, artifact, router, and RPC entrypoints
 - [API Reference](docs/api.md) — RPC calls and backend communication
 - [Firmware Compatibility](docs/compatibility.md) - inspected firmware artifacts, auth contract, and doctor behavior
 - [Package Manifest and Profiles](docs/packaging.md) - UI/full-stack packaging, overlays, conffiles, and lifecycle hooks
@@ -340,8 +341,8 @@ wrappers. Menu files are package-owned and are not marked as `conffiles`. See
 - [Write Methods - VPN](docs/write-methods-vpn.md) - VPN write method parameters
 - [Write Methods - Network](docs/write-methods-network.md) - Network and firewall parameters
 - [Write Methods - System](docs/write-methods-system.md) - System and service parameters
-- [Vue API Mixin](lib/api.js) - Browser API generated from the shared catalog
-- [Node.js Client](lib/api-client.js) - Standalone API generated from the same catalog
+- [Vue API Mixin](docs/node-api.md#browser-entry) - Browser API generated from the shared catalog
+- [Node.js Client](docs/node-api.md) - Standalone API generated from the same catalog
 
 ## Examples
 

@@ -12,11 +12,16 @@ based on Keep a Changelog, and versions follow Semantic Versioning.
 - A hybrid full-stack development loop: initial package installation, fast UI
   deploys for frontend changes, and debounced package reinstalls for overlay,
   lifecycle, and package-manifest changes.
+- Typed public package entrypoints for the stable Node.js toolkit API and the
+  browser-only RPC mixin, chart adapter, and admin-session helper.
+- Native ESM and CommonJS consumers resolve the same frozen toolkit namespaces.
 
 ### Changed
 
 - Generated projects pin the exact toolkit version that created them, so npm
   scripts no longer depend on a globally installed `glplugin` after scaffolding.
+- New integrations can use the package root while legacy `lib/*` imports remain
+  resolvable for compatibility.
 - `glplugin dev` now watches manifest-defined overlay and lifecycle paths and
   reuses its verified SSH/platform session across both deploy strategies. Package
   cycles force reinstall the unchanged development version so backend files apply;
